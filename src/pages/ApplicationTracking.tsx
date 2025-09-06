@@ -150,8 +150,13 @@ export function ApplicationTracking() {
   };
 
   const downloadInterviewLetter = async () => {
-    if (!application || !applicationType) return;
+    console.log('Download interview letter clicked!');
+    if (!application || !applicationType) {
+      console.log('Missing application or type:', { application: !!application, applicationType });
+      return;
+    }
 
+    console.log('Starting interview letter download...');
     setDownloadingPdf(true);
     try {
       console.log('Calling interview letter function with:', {
@@ -184,6 +189,8 @@ export function ApplicationTracking() {
             printWindow.print();
           }, 500);
         }
+      } else {
+        console.log('No HTML content in response');
       }
 
       toast({
@@ -199,6 +206,7 @@ export function ApplicationTracking() {
       });
     } finally {
       setDownloadingPdf(false);
+      console.log('Interview letter download finished');
     }
   };
 
@@ -287,6 +295,11 @@ export function ApplicationTracking() {
 
   const showInterviewLetter = application.status === "shortlisted_for_interview" && application.interview_date;
   const showMarkList = ["interview_complete", "admitted", "not_admitted"].includes(application.status);
+
+  console.log('Application status:', application.status);
+  console.log('Interview date:', application.interview_date);
+  console.log('Show interview letter:', showInterviewLetter);
+  console.log('Show mark list:', showMarkList);
 
   return (
     <div className="min-h-screen bg-background py-8">
