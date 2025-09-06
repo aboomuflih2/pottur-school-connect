@@ -155,6 +155,45 @@ export type Database = {
         }
         Relationships: []
       }
+      leadership_messages: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          message_content: string
+          person_name: string
+          person_title: string
+          photo_url: string | null
+          position: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          message_content: string
+          person_name: string
+          person_title: string
+          photo_url?: string | null
+          position: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          message_content?: string
+          person_name?: string
+          person_title?: string
+          photo_url?: string | null
+          position?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       news_posts: {
         Row: {
           author: string
@@ -227,6 +266,69 @@ export type Database = {
         }
         Relationships: []
       }
+      school_features: {
+        Row: {
+          created_at: string
+          display_order: number
+          feature_description: string
+          feature_title: string
+          icon_name: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          feature_description: string
+          feature_title: string
+          icon_name: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          feature_description?: string
+          feature_title?: string
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_counts: {
+        Row: {
+          created_at: string
+          guides_staff: number
+          id: string
+          professional_staff: number
+          security_staff: number
+          teaching_staff: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          guides_staff?: number
+          id?: string
+          professional_staff?: number
+          security_staff?: number
+          teaching_staff?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          guides_staff?: number
+          id?: string
+          professional_staff?: number
+          security_staff?: number
+          teaching_staff?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       testimonials: {
         Row: {
           created_at: string
@@ -238,6 +340,7 @@ export type Database = {
           quote: string
           rating: number | null
           relation: string
+          status: string
           updated_at: string
         }
         Insert: {
@@ -250,6 +353,7 @@ export type Database = {
           quote: string
           rating?: number | null
           relation: string
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -262,6 +366,7 @@ export type Database = {
           quote?: string
           rating?: number | null
           relation?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []

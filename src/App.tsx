@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import AdminRoute from "./components/AdminRoute";
@@ -12,6 +13,9 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import HeroSlidesManager from "./pages/admin/HeroSlides";
 import BreakingNewsManager from "./pages/admin/BreakingNews";
 import ContactsManager from "./pages/admin/Contacts";
+import AboutPageManager from "./pages/admin/AboutPage";
+import LeadershipManager from "./pages/admin/Leadership";
+import SchoolFeaturesManager from "./pages/admin/SchoolFeatures";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +27,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/about" element={<About />} />
           <Route path="/auth" element={<Auth />} />
           
           {/* Admin Routes */}
@@ -34,6 +39,9 @@ const App = () => (
                   <Route path="banners" element={<HeroSlidesManager />} />
                   <Route path="breaking-news" element={<BreakingNewsManager />} />
                   <Route path="contacts" element={<ContactsManager />} />
+                  <Route path="about-page" element={<AboutPageManager />} />
+                  <Route path="leadership" element={<LeadershipManager />} />
+                  <Route path="features" element={<SchoolFeaturesManager />} />
                   <Route index element={<AdminDashboard />} />
                 </Routes>
               </AdminLayout>
