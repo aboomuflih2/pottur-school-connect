@@ -14,7 +14,10 @@ import {
   Star,
   Mail,
   ChevronDown,
-  LogOut 
+  LogOut,
+  Newspaper,
+  Calendar,
+  Images
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -27,6 +30,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const [pageManagementOpen, setPageManagementOpen] = useState(true);
   const [contentModulesOpen, setContentModulesOpen] = useState(true);
+  const [newsEventsOpen, setNewsEventsOpen] = useState(true);
   const [submissionsOpen, setSubmissionsOpen] = useState(true);
 
   const handleSignOut = async () => {
@@ -47,6 +51,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { href: '/admin/leadership', label: 'Leadership', icon: Users },
     { href: '/admin/school-features', label: 'School Features', icon: Star },
     { href: '/admin/testimonials', label: 'Testimonials', icon: Trophy },
+  ];
+
+  const newsEventsItems = [
+    { href: '/admin/news', label: 'News & Blog', icon: Newspaper },
+    { href: '/admin/events', label: 'Events', icon: Calendar },
+    { href: '/admin/gallery', label: 'Gallery', icon: Images },
   ];
 
   const submissionItems = [
@@ -122,6 +132,38 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-1 ml-4 mt-1">
                 {contentModuleItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.href}
+                      to={item.href}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        }`
+                      }
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </NavLink>
+                  );
+                })}
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* News & Events Management */}
+            <Collapsible open={newsEventsOpen} onOpenChange={setNewsEventsOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors">
+                <div className="flex items-center gap-3">
+                  <Newspaper className="h-4 w-4" />
+                  News & Events Management
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform ${newsEventsOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-1 ml-4 mt-1">
+                {newsEventsItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <NavLink
