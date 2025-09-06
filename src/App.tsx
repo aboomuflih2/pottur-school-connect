@@ -25,6 +25,12 @@ import NewsManager from "./pages/admin/NewsManager";
 import EventsManager from "./pages/admin/EventsManager";
 import GalleryManager from "./pages/admin/GalleryManager";
 import SocialLinksManager from "./pages/admin/SocialLinksManager";
+import AdmissionForms from "./pages/admin/AdmissionForms";
+import AdmissionApplications from "./pages/admin/AdmissionApplications";
+import { KGStdApplicationForm } from "./components/admissions/KGStdApplicationForm";
+import { PlusOneApplicationForm } from "./components/admissions/PlusOneApplicationForm";
+import { ApplicationSuccess } from "./pages/ApplicationSuccess";
+import { ApplicationTracking } from "./pages/ApplicationTracking";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +47,12 @@ const App = () => (
             <Route path="/academics" element={<Academics />} />
             <Route path="/news" element={<NewsEvents />} />
             <Route path="/auth" element={<Auth />} />
+            
+            {/* Admission Routes */}
+            <Route path="/admissions/apply/kg-std" element={<KGStdApplicationForm />} />
+            <Route path="/admissions/apply/plus-one" element={<PlusOneApplicationForm />} />
+            <Route path="/admissions/success" element={<ApplicationSuccess />} />
+            <Route path="/admissions/track" element={<ApplicationTracking />} />
           
           {/* Admin Routes */}
           <Route path="/admin/*" element={
@@ -60,6 +72,8 @@ const App = () => (
                   <Route path="events" element={<EventsManager />} />
                   <Route path="gallery" element={<GalleryManager />} />
                   <Route path="social-links" element={<SocialLinksManager />} />
+                  <Route path="admission-forms" element={<AdmissionForms />} />
+                  <Route path="admission-applications" element={<AdmissionApplications />} />
                   <Route index element={<AdminDashboard />} />
                 </Routes>
               </AdminLayout>

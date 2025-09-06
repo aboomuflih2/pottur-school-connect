@@ -62,6 +62,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admission_forms: {
+        Row: {
+          academic_year: string
+          created_at: string
+          form_type: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string
+          created_at?: string
+          form_type: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          created_at?: string
+          form_type?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       article_comments: {
         Row: {
           article_id: string
@@ -297,6 +324,120 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_subjects: {
+        Row: {
+          application_id: string
+          application_type: string
+          created_at: string
+          id: string
+          marks: number | null
+          subject_name: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          application_type: string
+          created_at?: string
+          id?: string
+          marks?: number | null
+          subject_name: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          application_type?: string
+          created_at?: string
+          id?: string
+          marks?: number | null
+          subject_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kg_std_applications: {
+        Row: {
+          application_number: string
+          created_at: string
+          date_of_birth: string
+          district: string
+          email: string | null
+          father_name: string
+          full_name: string
+          gender: string
+          has_siblings: boolean | null
+          house_name: string
+          id: string
+          interview_date: string | null
+          interview_time: string | null
+          mobile_number: string
+          mother_name: string
+          need_madrassa: boolean | null
+          pincode: string
+          post_office: string
+          previous_madrassa: string | null
+          previous_school: string | null
+          siblings_names: string | null
+          stage: string
+          status: string
+          updated_at: string
+          village: string
+        }
+        Insert: {
+          application_number: string
+          created_at?: string
+          date_of_birth: string
+          district: string
+          email?: string | null
+          father_name: string
+          full_name: string
+          gender: string
+          has_siblings?: boolean | null
+          house_name: string
+          id?: string
+          interview_date?: string | null
+          interview_time?: string | null
+          mobile_number: string
+          mother_name: string
+          need_madrassa?: boolean | null
+          pincode: string
+          post_office: string
+          previous_madrassa?: string | null
+          previous_school?: string | null
+          siblings_names?: string | null
+          stage: string
+          status?: string
+          updated_at?: string
+          village: string
+        }
+        Update: {
+          application_number?: string
+          created_at?: string
+          date_of_birth?: string
+          district?: string
+          email?: string | null
+          father_name?: string
+          full_name?: string
+          gender?: string
+          has_siblings?: boolean | null
+          house_name?: string
+          id?: string
+          interview_date?: string | null
+          interview_time?: string | null
+          mobile_number?: string
+          mother_name?: string
+          need_madrassa?: boolean | null
+          pincode?: string
+          post_office?: string
+          previous_madrassa?: string | null
+          previous_school?: string | null
+          siblings_names?: string | null
+          stage?: string
+          status?: string
+          updated_at?: string
+          village?: string
+        }
+        Relationships: []
+      }
       leadership_messages: {
         Row: {
           created_at: string
@@ -408,6 +549,96 @@ export type Database = {
           page_key?: string
           page_title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      plus_one_applications: {
+        Row: {
+          application_number: string
+          board: string
+          created_at: string
+          date_of_birth: string
+          district: string
+          email: string | null
+          exam_roll_number: string
+          exam_year: string
+          father_name: string
+          full_name: string
+          gender: string
+          has_siblings: boolean | null
+          house_name: string
+          id: string
+          interview_date: string | null
+          interview_time: string | null
+          landmark: string | null
+          mobile_number: string
+          mother_name: string
+          pincode: string
+          post_office: string
+          siblings_names: string | null
+          status: string
+          stream: string
+          tenth_school: string
+          updated_at: string
+          village: string
+        }
+        Insert: {
+          application_number: string
+          board: string
+          created_at?: string
+          date_of_birth: string
+          district: string
+          email?: string | null
+          exam_roll_number: string
+          exam_year: string
+          father_name: string
+          full_name: string
+          gender: string
+          has_siblings?: boolean | null
+          house_name: string
+          id?: string
+          interview_date?: string | null
+          interview_time?: string | null
+          landmark?: string | null
+          mobile_number: string
+          mother_name: string
+          pincode: string
+          post_office: string
+          siblings_names?: string | null
+          status?: string
+          stream: string
+          tenth_school: string
+          updated_at?: string
+          village: string
+        }
+        Update: {
+          application_number?: string
+          board?: string
+          created_at?: string
+          date_of_birth?: string
+          district?: string
+          email?: string | null
+          exam_roll_number?: string
+          exam_year?: string
+          father_name?: string
+          full_name?: string
+          gender?: string
+          has_siblings?: boolean | null
+          house_name?: string
+          id?: string
+          interview_date?: string | null
+          interview_time?: string | null
+          landmark?: string | null
+          mobile_number?: string
+          mother_name?: string
+          pincode?: string
+          post_office?: string
+          siblings_names?: string | null
+          status?: string
+          stream?: string
+          tenth_school?: string
+          updated_at?: string
+          village?: string
         }
         Relationships: []
       }

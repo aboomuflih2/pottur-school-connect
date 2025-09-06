@@ -18,7 +18,9 @@ import {
   Newspaper,
   Calendar,
   Images,
-  Settings
+  Settings,
+  GraduationCap,
+  Share2
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -32,6 +34,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [pageManagementOpen, setPageManagementOpen] = useState(true);
   const [contentModulesOpen, setContentModulesOpen] = useState(true);
   const [newsEventsOpen, setNewsEventsOpen] = useState(true);
+  const [admissionsOpen, setAdmissionsOpen] = useState(true);
   const [siteSettingsOpen, setSiteSettingsOpen] = useState(true);
   const [submissionsOpen, setSubmissionsOpen] = useState(true);
 
@@ -61,8 +64,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { href: '/admin/gallery', label: 'Gallery', icon: Images },
   ];
 
+  const admissionsItems = [
+    { href: '/admin/admission-forms', label: 'Form Management', icon: Settings },
+    { href: '/admin/admission-applications', label: 'Applications', icon: Users },
+  ];
+
   const siteSettingsItems = [
-    { href: '/admin/social-links', label: 'Social Media Links', icon: Settings },
+    { href: '/admin/social-links', label: 'Social Media Links', icon: Share2 },
   ];
 
   const submissionItems = [
@@ -170,6 +178,38 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-1 ml-4 mt-1">
                 {newsEventsItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.href}
+                      to={item.href}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        }`
+                      }
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </NavLink>
+                  );
+                })}
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Admissions */}
+            <Collapsible open={admissionsOpen} onOpenChange={setAdmissionsOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors">
+                <div className="flex items-center gap-3">
+                  <GraduationCap className="h-4 w-4" />
+                  Admissions
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform ${admissionsOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-1 ml-4 mt-1">
+                {admissionsItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <NavLink
