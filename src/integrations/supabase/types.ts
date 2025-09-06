@@ -14,6 +14,258 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_programs: {
+        Row: {
+          created_at: string
+          detailed_description: string
+          display_order: number
+          duration: string | null
+          icon_image: string | null
+          id: string
+          is_active: boolean
+          program_title: string
+          short_description: string
+          subjects: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          detailed_description: string
+          display_order?: number
+          duration?: string | null
+          icon_image?: string | null
+          id?: string
+          is_active?: boolean
+          program_title: string
+          short_description: string
+          subjects?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          detailed_description?: string
+          display_order?: number
+          duration?: string | null
+          icon_image?: string | null
+          id?: string
+          is_active?: boolean
+          program_title?: string
+          short_description?: string
+          subjects?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      breaking_news: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          message: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_read: boolean
+          message: string
+          name: string
+          phone: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_read?: boolean
+          message: string
+          name: string
+          phone?: string | null
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          name?: string
+          phone?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hero_slides: {
+        Row: {
+          background_image: string | null
+          button_link: string
+          button_text: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          slide_subtitle: string
+          slide_title: string
+          updated_at: string
+        }
+        Insert: {
+          background_image?: string | null
+          button_link: string
+          button_text: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          slide_subtitle: string
+          slide_title: string
+          updated_at?: string
+        }
+        Update: {
+          background_image?: string | null
+          button_link?: string
+          button_text?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          slide_subtitle?: string
+          slide_title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      news_posts: {
+        Row: {
+          author: string
+          content: string
+          created_at: string
+          excerpt: string
+          featured_image: string | null
+          id: string
+          is_published: boolean
+          publication_date: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author: string
+          content: string
+          created_at?: string
+          excerpt: string
+          featured_image?: string | null
+          id?: string
+          is_published?: boolean
+          publication_date?: string
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          content?: string
+          created_at?: string
+          excerpt?: string
+          featured_image?: string | null
+          id?: string
+          is_published?: boolean
+          publication_date?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      page_content: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          meta_description: string | null
+          page_key: string
+          page_title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          page_key: string
+          page_title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          page_key?: string
+          page_title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          person_name: string
+          photo: string | null
+          quote: string
+          rating: number | null
+          relation: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          person_name: string
+          photo?: string | null
+          quote: string
+          rating?: number | null
+          relation: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          person_name?: string
+          photo?: string | null
+          quote?: string
+          rating?: number | null
+          relation?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
