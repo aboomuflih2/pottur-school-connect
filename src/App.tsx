@@ -16,6 +16,7 @@ import ContactsManager from "./pages/admin/Contacts";
 import AboutPageManager from "./pages/admin/AboutPage";
 import LeadershipManager from "./pages/admin/Leadership";
 import SchoolFeaturesManager from "./pages/admin/SchoolFeatures";
+import TestimonialsManager from "./pages/admin/Testimonials";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
                   <Route path="about-page" element={<AboutPageManager />} />
                   <Route path="leadership" element={<LeadershipManager />} />
                   <Route path="features" element={<SchoolFeaturesManager />} />
+                  <Route path="testimonials" element={<TestimonialsManager />} />
                   <Route index element={<AdminDashboard />} />
                 </Routes>
               </AdminLayout>
