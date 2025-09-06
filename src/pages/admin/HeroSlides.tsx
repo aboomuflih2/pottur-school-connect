@@ -1,0 +1,377 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { Plus, Edit, Trash2, Eye, EyeOff, GripVertical } from 'lucide-react';
+
+interface HeroSlide {
+  id: string;
+  slide_title: string;
+  slide_subtitle: string;
+  background_image: string | null;
+  button_text: string;
+  button_link: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+const HeroSlidesManager = () => {
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const [formData, setFormData] = useState({
+    slide_title: '',
+    slide_subtitle: '',
+    button_text: '',
+    button_link: '',
+    display_order: 0,
+    is_active: true,
+  });
+
+  useEffect(() => {
+    loadSlides();
+  }, []);
+
+  const loadSlides = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hero_slides')
+        .select('*')
+        .order('display_order');
+
+      if (error) throw error;
+      setSlides(data || []);
+    } catch (error) {
+      console.error('Error loading slides:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load hero slides',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      if (editingSlide) {
+        // Update existing slide
+        const { error } = await supabase
+          .from('hero_slides')
+          .update(formData)
+          .eq('id', editingSlide.id);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Success',
+          description: 'Hero slide updated successfully',
+        });
+      } else {
+        // Create new slide
+        const { error } = await supabase
+          .from('hero_slides')
+          .insert([formData]);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Success',
+          description: 'Hero slide created successfully',
+        });
+      }
+
+      setShowForm(false);
+      setEditingSlide(null);
+      resetForm();
+      loadSlides();
+    } catch (error) {
+      console.error('Error saving slide:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save hero slide',
+      });
+    }
+  };
+
+  const handleEdit = (slide: HeroSlide) => {
+    setEditingSlide(slide);
+    setFormData({
+      slide_title: slide.slide_title,
+      slide_subtitle: slide.slide_subtitle,
+      button_text: slide.button_text,
+      button_link: slide.button_link,
+      display_order: slide.display_order,
+      is_active: slide.is_active,
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (slideId: string) => {
+    if (!confirm('Are you sure you want to delete this hero slide?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('hero_slides')
+        .delete()
+        .eq('id', slideId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Hero slide deleted successfully',
+      });
+
+      loadSlides();
+    } catch (error) {
+      console.error('Error deleting slide:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete hero slide',
+      });
+    }
+  };
+
+  const toggleActive = async (slideId: string, currentActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('hero_slides')
+        .update({ is_active: !currentActive })
+        .eq('id', slideId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `Hero slide ${!currentActive ? 'activated' : 'deactivated'}`,
+      });
+
+      loadSlides();
+    } catch (error) {
+      console.error('Error toggling slide status:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update slide status',
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      slide_title: '',
+      slide_subtitle: '',
+      button_text: '',
+      button_link: '',
+      display_order: slides.length,
+      is_active: true,
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Hero Slides Manager</h1>
+          <p className="text-muted-foreground">Manage homepage banner slides</p>
+        </div>
+        <Button
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add New Slide
+        </Button>
+      </div>
+
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {editingSlide ? 'Edit Hero Slide' : 'Create New Hero Slide'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="slide_title">Slide Title</Label>
+                  <Input
+                    id="slide_title"
+                    value={formData.slide_title}
+                    onChange={(e) => setFormData({ ...formData, slide_title: e.target.value })}
+                    placeholder="Enter slide title"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="button_text">Button Text</Label>
+                  <Input
+                    id="button_text"
+                    value={formData.button_text}
+                    onChange={(e) => setFormData({ ...formData, button_text: e.target.value })}
+                    placeholder="Enter button text"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="slide_subtitle">Slide Subtitle</Label>
+                <Textarea
+                  id="slide_subtitle"
+                  value={formData.slide_subtitle}
+                  onChange={(e) => setFormData({ ...formData, slide_subtitle: e.target.value })}
+                  placeholder="Enter slide subtitle/description"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="button_link">Button Link</Label>
+                  <Input
+                    id="button_link"
+                    value={formData.button_link}
+                    onChange={(e) => setFormData({ ...formData, button_link: e.target.value })}
+                    placeholder="/academics, /admissions, etc."
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="display_order">Display Order</Label>
+                  <Input
+                    id="display_order"
+                    type="number"
+                    value={formData.display_order}
+                    onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                />
+                <Label htmlFor="is_active">Active</Label>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button type="submit">
+                  {editingSlide ? 'Update Slide' : 'Create Slide'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingSlide(null);
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-4">
+        {slides.map((slide) => (
+          <Card key={slide.id}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold">{slide.slide_title}</h3>
+                      <Badge variant={slide.is_active ? 'default' : 'secondary'}>
+                        {slide.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <Badge variant="outline">Order: {slide.display_order}</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">{slide.slide_subtitle}</p>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span><strong>Button:</strong> {slide.button_text}</span>
+                      <span><strong>Link:</strong> {slide.button_link}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleActive(slide.id, slide.is_active)}
+                  >
+                    {slide.is_active ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(slide)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(slide.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {slides.length === 0 && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">No hero slides found. Create your first slide to get started.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default HeroSlidesManager;
