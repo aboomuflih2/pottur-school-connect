@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import AdminLayout from "@/components/AdminLayout";
+
 
 interface SchoolFeature {
   id: string;
@@ -244,251 +244,247 @@ const SchoolFeaturesManager = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </AdminLayout>
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">School Features Manager</h1>
-            <p className="text-muted-foreground">Manage the "Why Choose Us" features</p>
-          </div>
-          <Button 
-            onClick={() => setShowAddForm(true)}
-            className="bg-primary hover:bg-primary-light"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Feature
-          </Button>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">School Features Manager</h1>
+          <p className="text-muted-foreground">Manage the "Why Choose Us" features</p>
         </div>
+        <Button 
+          onClick={() => setShowAddForm(true)}
+          className="bg-primary hover:bg-primary-light"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Feature
+        </Button>
+      </div>
 
-        {/* Add New Feature Form */}
-        {showAddForm && (
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold">Add New Feature</h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setShowAddForm(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new-title">Feature Title</Label>
-                  <Input
-                    id="new-title"
-                    value={newFeature.feature_title}
-                    onChange={(e) => setNewFeature({ ...newFeature, feature_title: e.target.value })}
-                    placeholder="Enter feature title"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-icon">Icon</Label>
-                  <Select 
-                    value={newFeature.icon_name}
-                    onValueChange={(value) => setNewFeature({ ...newFeature, icon_name: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {iconOptions.map((option) => {
-                        const Icon = option.icon;
-                        return (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex items-center">
-                              <Icon className="h-4 w-4 mr-2" />
-                              {option.label}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="new-description">Description</Label>
-                <Textarea
-                  id="new-description"
-                  value={newFeature.feature_description}
-                  onChange={(e) => setNewFeature({ ...newFeature, feature_description: e.target.value })}
-                  rows={3}
-                  placeholder="Enter feature description"
-                />
-              </div>
-
+      {/* Add New Feature Form */}
+      {showAddForm && (
+        <Card className="p-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Add New Feature</h3>
               <Button 
-                onClick={handleAdd}
-                disabled={saving === 'new'}
-                className="bg-primary hover:bg-primary-light"
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowAddForm(false)}
               >
-                {saving === 'new' ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Feature
-                  </>
-                )}
+                <X className="h-4 w-4" />
               </Button>
             </div>
-          </Card>
-        )}
 
-        {/* Features List */}
-        <div className="grid gap-4">
-          {features.map((feature) => {
-            const Icon = getIcon(feature.icon_name);
-            const isEditing = editingId === feature.id;
-            
-            return (
-              <Card key={feature.id} className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full">
-                        <Icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        {isEditing ? (
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <Input
-                              value={feature.feature_title}
-                              onChange={(e) => handleFeatureChange(feature.id, 'feature_title', e.target.value)}
-                              placeholder="Feature title"
-                            />
-                            <Select 
-                              value={feature.icon_name}
-                              onValueChange={(value) => handleFeatureChange(feature.id, 'icon_name', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {iconOptions.map((option) => {
-                                  const OptionIcon = option.icon;
-                                  return (
-                                    <SelectItem key={option.value} value={option.value}>
-                                      <div className="flex items-center">
-                                        <OptionIcon className="h-4 w-4 mr-2" />
-                                        {option.label}
-                                      </div>
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-title">Feature Title</Label>
+                <Input
+                  id="new-title"
+                  value={newFeature.feature_title}
+                  onChange={(e) => setNewFeature({ ...newFeature, feature_title: e.target.value })}
+                  placeholder="Enter feature title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-icon">Icon</Label>
+                <Select 
+                  value={newFeature.icon_name}
+                  onValueChange={(value) => setNewFeature({ ...newFeature, icon_name: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {iconOptions.map((option) => {
+                      const Icon = option.icon;
+                      return (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center">
+                            <Icon className="h-4 w-4 mr-2" />
+                            {option.label}
                           </div>
-                        ) : (
-                          <div className="flex items-center space-x-2">
-                            <h3 className="text-lg font-semibold">{feature.feature_title}</h3>
-                            <Badge variant={feature.is_active ? "default" : "secondary"}>
-                              {feature.is_active ? "Active" : "Inactive"}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new-description">Description</Label>
+              <Textarea
+                id="new-description"
+                value={newFeature.feature_description}
+                onChange={(e) => setNewFeature({ ...newFeature, feature_description: e.target.value })}
+                rows={3}
+                placeholder="Enter feature description"
+              />
+            </div>
+
+            <Button 
+              onClick={handleAdd}
+              disabled={saving === 'new'}
+              className="bg-primary hover:bg-primary-light"
+            >
+              {saving === 'new' ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Feature
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Features List */}
+      <div className="grid gap-4">
+        {features.map((feature) => {
+          const Icon = getIcon(feature.icon_name);
+          const isEditing = editingId === feature.id;
+          
+          return (
+            <Card key={feature.id} className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full">
+                      <Icon className="h-6 w-6 text-primary" />
                     </div>
-
-                    {isEditing ? (
-                      <Textarea
-                        value={feature.feature_description}
-                        onChange={(e) => handleFeatureChange(feature.id, 'feature_description', e.target.value)}
-                        rows={3}
-                        placeholder="Feature description"
-                      />
-                    ) : (
-                      <p className="text-muted-foreground ml-16">{feature.feature_description}</p>
-                    )}
+                    <div className="flex-1 space-y-2">
+                      {isEditing ? (
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <Input
+                            value={feature.feature_title}
+                            onChange={(e) => handleFeatureChange(feature.id, 'feature_title', e.target.value)}
+                            placeholder="Feature title"
+                          />
+                          <Select 
+                            value={feature.icon_name}
+                            onValueChange={(value) => handleFeatureChange(feature.id, 'icon_name', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {iconOptions.map((option) => {
+                                const OptionIcon = option.icon;
+                                return (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    <div className="flex items-center">
+                                      <OptionIcon className="h-4 w-4 mr-2" />
+                                      {option.label}
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <h3 className="text-lg font-semibold">{feature.feature_title}</h3>
+                          <Badge variant={feature.is_active ? "default" : "secondary"}>
+                            {feature.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 ml-4">
-                    {isEditing ? (
-                      <>
-                        <Button
-                          onClick={() => handleUpdate(feature)}
-                          disabled={saving === feature.id}
-                          size="sm"
-                          className="bg-primary hover:bg-primary-light"
-                        >
-                          {saving === feature.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Save className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          onClick={() => setEditingId(null)}
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          onClick={() => setEditingId(feature.id)}
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          onClick={() => toggleActive(feature.id, !feature.is_active)}
-                          variant="ghost"
-                          size="sm"
-                          disabled={saving === feature.id}
-                        >
-                          {saving === feature.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Badge variant={feature.is_active ? "default" : "secondary"}>
-                              {feature.is_active ? "Active" : "Inactive"}
-                            </Badge>
-                          )}
-                        </Button>
-                        <Button
-                          onClick={() => handleDelete(feature.id)}
-                          variant="ghost"
-                          size="sm"
-                          disabled={saving === feature.id}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                  {isEditing ? (
+                    <Textarea
+                      value={feature.feature_description}
+                      onChange={(e) => handleFeatureChange(feature.id, 'feature_description', e.target.value)}
+                      rows={3}
+                      placeholder="Feature description"
+                    />
+                  ) : (
+                    <p className="text-muted-foreground ml-16">{feature.feature_description}</p>
+                  )}
                 </div>
-              </Card>
-            );
-          })}
-        </div>
 
-        {features.length === 0 && (
-          <Card className="p-12 text-center">
-            <p className="text-muted-foreground">No features found. Add your first feature to get started.</p>
-          </Card>
-        )}
+                <div className="flex items-center space-x-2 ml-4">
+                  {isEditing ? (
+                    <>
+                      <Button
+                        onClick={() => handleUpdate(feature)}
+                        disabled={saving === feature.id}
+                        size="sm"
+                        className="bg-primary hover:bg-primary-light"
+                      >
+                        {saving === feature.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => setEditingId(null)}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={() => setEditingId(feature.id)}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => toggleActive(feature.id, !feature.is_active)}
+                        variant="ghost"
+                        size="sm"
+                        disabled={saving === feature.id}
+                      >
+                        {saving === feature.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Badge variant={feature.is_active ? "default" : "secondary"}>
+                            {feature.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(feature.id)}
+                        variant="ghost"
+                        size="sm"
+                        disabled={saving === feature.id}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </Card>
+          );
+        })}
       </div>
-    </AdminLayout>
+
+      {features.length === 0 && (
+        <Card className="p-12 text-center">
+          <p className="text-muted-foreground">No features found. Add your first feature to get started.</p>
+        </Card>
+      )}
+    </div>
   );
 };
 

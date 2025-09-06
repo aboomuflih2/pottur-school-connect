@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Save, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import AdminLayout from "@/components/AdminLayout";
+
 
 interface PageContent {
   about_legacy: string;
@@ -128,146 +128,142 @@ const AboutPageManager = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </AdminLayout>
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">About Page Manager</h1>
-            <p className="text-muted-foreground">Manage the content for the About Us page</p>
-          </div>
-          <Button 
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-primary hover:bg-primary-light"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
-            )}
-          </Button>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">About Page Manager</h1>
+          <p className="text-muted-foreground">Manage the content for the About Us page</p>
         </div>
+        <Button 
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-primary hover:bg-primary-light"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </>
+          )}
+        </Button>
+      </div>
 
-        {/* Page Content Sections */}
-        <div className="grid gap-6">
-          {/* Legacy Section */}
+      {/* Page Content Sections */}
+      <div className="grid gap-6">
+        {/* Legacy Section */}
+        <Card className="p-6">
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">Legacy Section</h3>
+            <div className="space-y-2">
+              <Label htmlFor="legacy">School History & Legacy</Label>
+              <Textarea
+                id="legacy"
+                value={content.about_legacy}
+                onChange={(e) => setContent({ ...content, about_legacy: e.target.value })}
+                rows={6}
+                placeholder="Enter the school's history and legacy content..."
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Mission & Vision */}
+        <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6">
             <div className="space-y-4">
-              <h3 className="text-xl font-semibold">Legacy Section</h3>
+              <h3 className="text-xl font-semibold">Mission Statement</h3>
               <div className="space-y-2">
-                <Label htmlFor="legacy">School History & Legacy</Label>
+                <Label htmlFor="mission">Our Mission</Label>
                 <Textarea
-                  id="legacy"
-                  value={content.about_legacy}
-                  onChange={(e) => setContent({ ...content, about_legacy: e.target.value })}
-                  rows={6}
-                  placeholder="Enter the school's history and legacy content..."
+                  id="mission"
+                  value={content.about_mission}
+                  onChange={(e) => setContent({ ...content, about_mission: e.target.value })}
+                  rows={5}
+                  placeholder="Enter the school's mission statement..."
                 />
               </div>
             </div>
           </Card>
 
-          {/* Mission & Vision */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold">Mission Statement</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="mission">Our Mission</Label>
-                  <Textarea
-                    id="mission"
-                    value={content.about_mission}
-                    onChange={(e) => setContent({ ...content, about_mission: e.target.value })}
-                    rows={5}
-                    placeholder="Enter the school's mission statement..."
-                  />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold">Vision Statement</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="vision">Our Vision</Label>
-                  <Textarea
-                    id="vision"
-                    value={content.about_vision}
-                    onChange={(e) => setContent({ ...content, about_vision: e.target.value })}
-                    rows={5}
-                    placeholder="Enter the school's vision statement..."
-                  />
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Staff Counts */}
           <Card className="p-6">
             <div className="space-y-4">
-              <h3 className="text-xl font-semibold">Staff Strength Counts</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="teaching">Teaching Staff</Label>
-                  <Input
-                    id="teaching"
-                    type="number"
-                    min="0"
-                    value={staffCounts.teaching_staff}
-                    onChange={(e) => setStaffCounts({ ...staffCounts, teaching_staff: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="security">Security Staff</Label>
-                  <Input
-                    id="security"
-                    type="number"
-                    min="0"
-                    value={staffCounts.security_staff}
-                    onChange={(e) => setStaffCounts({ ...staffCounts, security_staff: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="professional">Professional Staff</Label>
-                  <Input
-                    id="professional"
-                    type="number"
-                    min="0"
-                    value={staffCounts.professional_staff}
-                    onChange={(e) => setStaffCounts({ ...staffCounts, professional_staff: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="guides">Guides</Label>
-                  <Input
-                    id="guides"
-                    type="number"
-                    min="0"
-                    value={staffCounts.guides_staff}
-                    onChange={(e) => setStaffCounts({ ...staffCounts, guides_staff: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
+              <h3 className="text-xl font-semibold">Vision Statement</h3>
+              <div className="space-y-2">
+                <Label htmlFor="vision">Our Vision</Label>
+                <Textarea
+                  id="vision"
+                  value={content.about_vision}
+                  onChange={(e) => setContent({ ...content, about_vision: e.target.value })}
+                  rows={5}
+                  placeholder="Enter the school's vision statement..."
+                />
               </div>
             </div>
           </Card>
         </div>
+
+        {/* Staff Counts */}
+        <Card className="p-6">
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">Staff Strength Counts</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="teaching">Teaching Staff</Label>
+                <Input
+                  id="teaching"
+                  type="number"
+                  min="0"
+                  value={staffCounts.teaching_staff}
+                  onChange={(e) => setStaffCounts({ ...staffCounts, teaching_staff: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="security">Security Staff</Label>
+                <Input
+                  id="security"
+                  type="number"
+                  min="0"
+                  value={staffCounts.security_staff}
+                  onChange={(e) => setStaffCounts({ ...staffCounts, security_staff: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="professional">Professional Staff</Label>
+                <Input
+                  id="professional"
+                  type="number"
+                  min="0"
+                  value={staffCounts.professional_staff}
+                  onChange={(e) => setStaffCounts({ ...staffCounts, professional_staff: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="guides">Guides</Label>
+                <Input
+                  id="guides"
+                  type="number"
+                  min="0"
+                  value={staffCounts.guides_staff}
+                  onChange={(e) => setStaffCounts({ ...staffCounts, guides_staff: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
-    </AdminLayout>
+    </div>
   );
 };
 
