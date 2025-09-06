@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Academics from "./pages/Academics";
+import NewsEvents from "./pages/NewsEvents";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import AdminRoute from "./components/AdminRoute";
@@ -20,6 +21,9 @@ import LeadershipManager from "./pages/admin/Leadership";
 import SchoolFeaturesManager from "./pages/admin/SchoolFeatures";
 import TestimonialsManager from "./pages/admin/Testimonials";
 import AdminAcademics from "./pages/admin/Academics";
+import NewsManager from "./pages/admin/NewsManager";
+import EventsManager from "./pages/admin/EventsManager";
+import GalleryManager from "./pages/admin/GalleryManager";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +38,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
             <Route path="/academics" element={<Academics />} />
+            <Route path="/news" element={<NewsEvents />} />
             <Route path="/auth" element={<Auth />} />
           
           {/* Admin Routes */}
@@ -50,6 +55,9 @@ const App = () => (
                   <Route path="school-features" element={<SchoolFeaturesManager />} />
                   <Route path="testimonials" element={<TestimonialsManager />} />
                   <Route path="academics" element={<AdminAcademics />} />
+                  <Route path="news" element={<NewsManager />} />
+                  <Route path="events" element={<EventsManager />} />
+                  <Route path="gallery" element={<GalleryManager />} />
                   <Route index element={<AdminDashboard />} />
                 </Routes>
               </AdminLayout>

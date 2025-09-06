@@ -62,6 +62,76 @@ export type Database = {
         }
         Relationships: []
       }
+      article_comments: {
+        Row: {
+          article_id: string
+          author_email: string
+          author_name: string
+          comment_text: string
+          created_at: string
+          id: string
+          is_approved: boolean
+          updated_at: string
+        }
+        Insert: {
+          article_id: string
+          author_email: string
+          author_name: string
+          comment_text: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          updated_at?: string
+        }
+        Update: {
+          article_id?: string
+          author_email?: string
+          author_name?: string
+          comment_text?: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_comments_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "news_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      article_likes: {
+        Row: {
+          article_id: string
+          created_at: string
+          id: string
+          user_ip: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          id?: string
+          user_ip: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          id?: string
+          user_ip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_likes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "news_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       breaking_news: {
         Row: {
           created_at: string
@@ -118,6 +188,72 @@ export type Database = {
           name?: string
           phone?: string | null
           subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          created_at: string
+          date_time: string
+          description: string
+          event_type: string | null
+          id: string
+          is_active: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_time: string
+          description: string
+          event_type?: string | null
+          id?: string
+          is_active?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_time?: string
+          description?: string
+          event_type?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gallery_photos: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string
+          is_active: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url: string
+          is_active?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -209,6 +345,7 @@ export type Database = {
           featured_image: string | null
           id: string
           is_published: boolean
+          like_count: number
           publication_date: string
           slug: string
           title: string
@@ -222,6 +359,7 @@ export type Database = {
           featured_image?: string | null
           id?: string
           is_published?: boolean
+          like_count?: number
           publication_date?: string
           slug: string
           title: string
@@ -235,6 +373,7 @@ export type Database = {
           featured_image?: string | null
           id?: string
           is_published?: boolean
+          like_count?: number
           publication_date?: string
           slug?: string
           title?: string
