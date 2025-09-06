@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
+import Academics from "./pages/Academics";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import AdminRoute from "./components/AdminRoute";
@@ -17,6 +18,7 @@ import AboutPageManager from "./pages/admin/AboutPage";
 import LeadershipManager from "./pages/admin/Leadership";
 import SchoolFeaturesManager from "./pages/admin/SchoolFeatures";
 import TestimonialsManager from "./pages/admin/Testimonials";
+import AdminAcademics from "./pages/admin/Academics";
 
 const queryClient = new QueryClient();
 
@@ -26,10 +28,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/auth" element={<Auth />} />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/academics" element={<Academics />} />
+            <Route path="/auth" element={<Auth />} />
           
           {/* Admin Routes */}
           <Route path="/admin/*" element={
@@ -37,13 +40,14 @@ const App = () => (
               <AdminLayout>
                 <Routes>
                   <Route path="dashboard" element={<AdminDashboard />} />
-                  <Route path="banners" element={<HeroSlidesManager />} />
+                  <Route path="hero-slides" element={<HeroSlidesManager />} />
                   <Route path="breaking-news" element={<BreakingNewsManager />} />
                   <Route path="contacts" element={<ContactsManager />} />
-                  <Route path="about-page" element={<AboutPageManager />} />
+                  <Route path="about" element={<AboutPageManager />} />
                   <Route path="leadership" element={<LeadershipManager />} />
-                  <Route path="features" element={<SchoolFeaturesManager />} />
+                  <Route path="school-features" element={<SchoolFeaturesManager />} />
                   <Route path="testimonials" element={<TestimonialsManager />} />
+                  <Route path="academics" element={<AdminAcademics />} />
                   <Route index element={<AdminDashboard />} />
                 </Routes>
               </AdminLayout>

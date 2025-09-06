@@ -37,16 +37,16 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const dashboardItem = { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard };
   
   const pageManagementItems = [
-    { href: '/admin/banners', label: 'Homepage', icon: Image },
-    { href: '/admin/about-page', label: 'About Us', icon: FileText },
+    { href: '/admin/hero-slides', label: 'Hero Slides', icon: Image },
+    { href: '/admin/about', label: 'About Page', icon: FileText },
+    { href: '/admin/academics', label: 'Academics', icon: BookOpen },
   ];
 
   const contentModuleItems = [
-    { href: '/admin/banners', label: 'Hero Slides', icon: Image },
     { href: '/admin/breaking-news', label: 'Breaking News', icon: Radio },
-    { href: '/admin/testimonials', label: 'Testimonials', icon: Trophy },
     { href: '/admin/leadership', label: 'Leadership', icon: Users },
-    { href: '/admin/features', label: "'Why Choose Us' Features", icon: Star },
+    { href: '/admin/school-features', label: 'School Features', icon: Star },
+    { href: '/admin/testimonials', label: 'Testimonials', icon: Trophy },
   ];
 
   const submissionItems = [

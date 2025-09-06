@@ -17,12 +17,14 @@ export type Database = {
       academic_programs: {
         Row: {
           created_at: string
-          detailed_description: string
+          detailed_description: string | null
           display_order: number
           duration: string | null
+          full_description: string | null
           icon_image: string | null
           id: string
           is_active: boolean
+          main_image: string | null
           program_title: string
           short_description: string
           subjects: string[] | null
@@ -30,12 +32,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          detailed_description: string
+          detailed_description?: string | null
           display_order?: number
           duration?: string | null
+          full_description?: string | null
           icon_image?: string | null
           id?: string
           is_active?: boolean
+          main_image?: string | null
           program_title: string
           short_description: string
           subjects?: string[] | null
@@ -43,12 +47,14 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          detailed_description?: string
+          detailed_description?: string | null
           display_order?: number
           duration?: string | null
+          full_description?: string | null
           icon_image?: string | null
           id?: string
           is_active?: boolean
+          main_image?: string | null
           program_title?: string
           short_description?: string
           subjects?: string[] | null
