@@ -2,39 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Modern Higher Secondary School Design System - Professional Academic Theme */
 
 @layer base {
   :root {
+    /* Academic Color Palette */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Deep Academic Blue Primary */
+    --primary: 212 47% 23%;
+    --primary-foreground: 0 0% 98%;
+    --primary-light: 212 35% 45%;
+    --primary-glow: 212 47% 35%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Professional Secondary Colors */
+    --secondary: 210 16% 93%;
+    --secondary-foreground: 215 25% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 16% 93%;
+    --muted-foreground: 215 13% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Academic Gold Accent */
+    --accent: 45 93% 47%;
+    --accent-foreground: 215 25% 15%;
+    --accent-light: 45 93% 65%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Success Green for Academic Achievement */
+    --success: 142 72% 29%;
+    --success-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 210 16% 90%;
+    --input: 210 16% 90%;
+    --ring: 212 47% 23%;
+
+    /* School Brand Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(212 47% 23%), hsl(212 47% 35%));
+    --gradient-hero: linear-gradient(135deg, hsl(212 47% 23% / 0.95), hsl(212 47% 35% / 0.85));
+    --gradient-accent: linear-gradient(135deg, hsl(45 93% 47%), hsl(45 93% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 16% 98%));
+
+    /* Elegant Shadows */
+    --shadow-elegant: 0 10px 30px -10px hsl(212 47% 23% / 0.15);
+    --shadow-card: 0 4px 20px -4px hsl(212 20% 50% / 0.12);
+    --shadow-glow: 0 0 40px hsl(212 47% 35% / 0.2);
+
+    /* Smooth Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Typography Scale */
+    --font-heading: 'Inter', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
 
     --radius: 0.5rem;
 
@@ -102,4 +130,18 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom Animations */
+@keyframes scroll-text {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.scroll-text {
+  animation: scroll-text 20s linear infinite;
 }
