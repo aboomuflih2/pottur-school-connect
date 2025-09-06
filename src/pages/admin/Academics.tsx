@@ -13,7 +13,7 @@ import { Database } from "@/integrations/supabase/types";
 
 type AcademicProgram = Database["public"]["Tables"]["academic_programs"]["Row"];
 
-const Academics = () => {
+const AdminAcademics = () => {
   const [programs, setPrograms] = useState<AcademicProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProgram, setEditingProgram] = useState<AcademicProgram | null>(null);
@@ -372,4 +372,4 @@ const Academics = () => {
   );
 };
 
-export default Academics;
+export default AdminAcademics;
