@@ -24,6 +24,7 @@ import AdminAcademics from "./pages/admin/Academics";
 import NewsManager from "./pages/admin/NewsManager";
 import EventsManager from "./pages/admin/EventsManager";
 import GalleryManager from "./pages/admin/GalleryManager";
+import SocialLinksManager from "./pages/admin/SocialLinksManager";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
                   <Route path="news" element={<NewsManager />} />
                   <Route path="events" element={<EventsManager />} />
                   <Route path="gallery" element={<GalleryManager />} />
+                  <Route path="social-links" element={<SocialLinksManager />} />
                   <Route index element={<AdminDashboard />} />
                 </Routes>
               </AdminLayout>

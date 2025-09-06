@@ -1,8 +1,53 @@
-import { Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube, Linkedin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+interface SocialLink {
+  id: string;
+  platform: string;
+  url: string;
+  is_active: boolean;
+  display_order: number;
+}
+
+const platformIcons = {
+  facebook: Facebook,
+  instagram: Instagram,
+  youtube: Youtube,
+  twitter: Twitter,
+  linkedin: Linkedin,
+  tiktok: Youtube, // Using Youtube icon for TikTok as placeholder
+};
 
 const Footer = () => {
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchSocialLinks();
+  }, []);
+
+  const fetchSocialLinks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('social_media_links')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (error) throw error;
+      setSocialLinks(data || []);
+    } catch (error) {
+      console.error('Error fetching social links:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const quickLinks = [
     { name: "About Us", href: "/about" },
     { name: "Academics", href: "/academics" },
@@ -145,34 +190,38 @@ const Footer = () => {
             <div>
               <h5 className="font-semibold mb-4 text-accent">Follow Us</h5>
               <div className="flex gap-3">
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="text-primary-foreground hover:text-accent hover:bg-primary-foreground/10"
-                >
-                  <Facebook className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="text-primary-foreground hover:text-accent hover:bg-primary-foreground/10"
-                >
-                  <Instagram className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="text-primary-foreground hover:text-accent hover:bg-primary-foreground/10"
-                >
-                  <Youtube className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="text-primary-foreground hover:text-accent hover:bg-primary-foreground/10"
-                >
-                  <Twitter className="h-4 w-4" />
-                </Button>
+                {loading ? (
+                  // Loading placeholder
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="w-9 h-9 bg-primary-foreground/10 rounded animate-pulse" />
+                  ))
+                ) : socialLinks.length > 0 ? (
+                  // Dynamic social media buttons
+                  socialLinks.map((link) => {
+                    const IconComponent = platformIcons[link.platform as keyof typeof platformIcons];
+                    return (
+                      <Button
+                        key={link.id}
+                        size="icon"
+                        variant="ghost"
+                        className="text-primary-foreground hover:text-accent hover:bg-primary-foreground/10"
+                        asChild
+                      >
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Follow us on ${link.platform}`}
+                        >
+                          <IconComponent className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    );
+                  })
+                ) : (
+                  // Fallback if no links configured
+                  <p className="text-sm text-primary-foreground/60">No social media links configured</p>
+                )}
               </div>
             </div>
           </div>

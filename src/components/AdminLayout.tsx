@@ -17,7 +17,8 @@ import {
   LogOut,
   Newspaper,
   Calendar,
-  Images
+  Images,
+  Settings
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -31,6 +32,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [pageManagementOpen, setPageManagementOpen] = useState(true);
   const [contentModulesOpen, setContentModulesOpen] = useState(true);
   const [newsEventsOpen, setNewsEventsOpen] = useState(true);
+  const [siteSettingsOpen, setSiteSettingsOpen] = useState(true);
   const [submissionsOpen, setSubmissionsOpen] = useState(true);
 
   const handleSignOut = async () => {
@@ -57,6 +59,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { href: '/admin/news', label: 'News & Blog', icon: Newspaper },
     { href: '/admin/events', label: 'Events', icon: Calendar },
     { href: '/admin/gallery', label: 'Gallery', icon: Images },
+  ];
+
+  const siteSettingsItems = [
+    { href: '/admin/social-links', label: 'Social Media Links', icon: Settings },
   ];
 
   const submissionItems = [
@@ -164,6 +170,38 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-1 ml-4 mt-1">
                 {newsEventsItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.href}
+                      to={item.href}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        }`
+                      }
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </NavLink>
+                  );
+                })}
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Site Settings */}
+            <Collapsible open={siteSettingsOpen} onOpenChange={setSiteSettingsOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors">
+                <div className="flex items-center gap-3">
+                  <Settings className="h-4 w-4" />
+                  Site Settings
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform ${siteSettingsOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-1 ml-4 mt-1">
+                {siteSettingsItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <NavLink
