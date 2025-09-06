@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, Filter, Search, Users } from "lucide-react";
+import { Eye, Filter, Search, Users, Calendar, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface Application {
   id: string;
@@ -57,6 +60,10 @@ export default function AdmissionApplications() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
+  const [bulkInterviewModalOpen, setBulkInterviewModalOpen] = useState(false);
+  const [bulkInterviewDate, setBulkInterviewDate] = useState("");
+  const [bulkInterviewTime, setBulkInterviewTime] = useState("");
 
   useEffect(() => {
     fetchApplications();
@@ -136,6 +143,93 @@ export default function AdmissionApplications() {
 
   const viewApplication = (application: Application) => {
     navigate(`/admin/admissions/application/${application.type}/${application.id}`);
+  };
+
+  const toggleApplicationSelection = (applicationId: string) => {
+    const newSelected = new Set(selectedApplications);
+    if (newSelected.has(applicationId)) {
+      newSelected.delete(applicationId);
+    } else {
+      newSelected.add(applicationId);
+    }
+    setSelectedApplications(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedApplications.size === filteredApplications.length) {
+      setSelectedApplications(new Set());
+    } else {
+      setSelectedApplications(new Set(filteredApplications.map(app => app.id)));
+    }
+  };
+
+  const scheduleInterviewForSelected = async () => {
+    if (selectedApplications.size === 0 || !bulkInterviewDate || !bulkInterviewTime) {
+      toast({
+        title: "Error",
+        description: "Please select applications and provide interview date/time",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Update KG STD applications
+      const kgStdIds = Array.from(selectedApplications).filter(id => 
+        filteredApplications.find(app => app.id === id)?.type === "kg_std"
+      );
+      
+      if (kgStdIds.length > 0) {
+        const { error: kgError } = await supabase
+          .from('kg_std_applications')
+          .update({
+            status: 'shortlisted_for_interview',
+            interview_date: bulkInterviewDate,
+            interview_time: bulkInterviewTime
+          })
+          .in('id', kgStdIds);
+
+        if (kgError) throw kgError;
+      }
+
+      // Update Plus One applications
+      const plusOneIds = Array.from(selectedApplications).filter(id => 
+        filteredApplications.find(app => app.id === id)?.type === "plus_one"
+      );
+      
+      if (plusOneIds.length > 0) {
+        const { error: plusError } = await supabase
+          .from('plus_one_applications')
+          .update({
+            status: 'shortlisted_for_interview',
+            interview_date: bulkInterviewDate,
+            interview_time: bulkInterviewTime
+          })
+          .in('id', plusOneIds);
+
+        if (plusError) throw plusError;
+      }
+
+      toast({
+        title: "Success",
+        description: `Interview scheduled for ${selectedApplications.size} applications`,
+      });
+
+      // Reset state
+      setSelectedApplications(new Set());
+      setBulkInterviewModalOpen(false);
+      setBulkInterviewDate("");
+      setBulkInterviewTime("");
+      
+      // Refresh applications
+      fetchApplications();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to schedule interviews",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {
@@ -270,6 +364,59 @@ export default function AdmissionApplications() {
         </CardContent>
       </Card>
 
+      {/* Bulk Actions */}
+      {selectedApplications.size > 0 && (
+        <Card className="border-primary">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Check className="w-5 h-5" />
+                {selectedApplications.size} Applications Selected
+              </span>
+              <Dialog open={bulkInterviewModalOpen} onOpenChange={setBulkInterviewModalOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Schedule Interview for Selected
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Schedule Interview for {selectedApplications.size} Applications</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Interview Date</Label>
+                      <Input
+                        type="date"
+                        value={bulkInterviewDate}
+                        onChange={(e) => setBulkInterviewDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Interview Time</Label>
+                      <Input
+                        type="time"
+                        value={bulkInterviewTime}
+                        onChange={(e) => setBulkInterviewTime(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setBulkInterviewModalOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={scheduleInterviewForSelected}>
+                        Schedule Interviews
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      )}
+
       {/* Applications Table */}
       <Card>
         <CardHeader>
@@ -283,6 +430,12 @@ export default function AdmissionApplications() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedApplications.size === filteredApplications.length && filteredApplications.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Application No.</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
@@ -295,6 +448,12 @@ export default function AdmissionApplications() {
               <TableBody>
                 {filteredApplications.map((application) => (
                   <TableRow key={`${application.type}-${application.id}`}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedApplications.has(application.id)}
+                        onCheckedChange={() => toggleApplicationSelection(application.id)}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       {application.application_number}
                     </TableCell>

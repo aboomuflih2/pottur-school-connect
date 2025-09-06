@@ -17,7 +17,7 @@ import { ArrowLeft, Send } from "lucide-react";
 
 const formSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  gender: z.enum(["male", "female", "other"], { required_error: "Please select gender" }),
+  gender: z.enum(["boy", "girl"], { required_error: "Please select gender" }),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   stage: z.string().min(1, "Please select stage"),
   needMadrassa: z.boolean().default(false),
@@ -161,16 +161,12 @@ export function KGStdApplicationForm() {
                           className="flex flex-row space-x-6"
                         >
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="male" id="male" />
-                            <label htmlFor="male">Male</label>
+                            <RadioGroupItem value="boy" id="boy" />
+                            <label htmlFor="boy">Boy</label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="female" id="female" />
-                            <label htmlFor="female">Female</label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="other" id="other" />
-                            <label htmlFor="other">Other</label>
+                            <RadioGroupItem value="girl" id="girl" />
+                            <label htmlFor="girl">Girl</label>
                           </div>
                         </RadioGroup>
                       </FormControl>
@@ -339,9 +335,9 @@ export function KGStdApplicationForm() {
                   name="village"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Village</FormLabel>
+                      <FormLabel>Panchayath</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter village" {...field} />
+                        <Input placeholder="Enter panchayath" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
