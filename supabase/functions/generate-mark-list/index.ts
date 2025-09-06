@@ -1,0 +1,265 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  console.log('Mark list generation function called');
+
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { applicationNumber, applicationType } = await req.json();
+    console.log('Request data:', { applicationNumber, applicationType });
+
+    if (!applicationNumber || !applicationType) {
+      console.error('Missing required parameters');
+      return new Response(
+        JSON.stringify({ error: 'Application number and type are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch application data
+    const tableName = applicationType === 'kg_std' ? 'kg_std_applications' : 'plus_one_applications';
+    console.log('Fetching from table:', tableName);
+
+    const { data: application, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .eq('application_number', applicationNumber)
+      .single();
+
+    if (error || !application) {
+      console.error('Application not found:', error);
+      return new Response(
+        JSON.stringify({ error: 'Application not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Application found:', application.full_name);
+
+    // Check if application is eligible for mark list
+    const eligibleStatuses = ['interview_complete', 'admitted', 'not_admitted'];
+    if (!eligibleStatuses.includes(application.status)) {
+      console.error('Application not eligible for mark list');
+      return new Response(
+        JSON.stringify({ error: 'Mark list is not available for this application status' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Fetch interview subjects and marks
+    const { data: subjects, error: subjectsError } = await supabase
+      .from('interview_subjects')
+      .select('*')
+      .eq('application_id', application.id)
+      .eq('application_type', applicationType);
+
+    if (subjectsError) {
+      console.error('Error fetching subjects:', subjectsError);
+      return new Response(
+        JSON.stringify({ error: 'Error fetching interview subjects' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Subjects found:', subjects?.length || 0);
+
+    // Calculate total marks
+    const totalMarks = subjects?.reduce((sum, subject) => sum + (subject.marks || 0), 0) || 0;
+    const maxMarks = (subjects?.length || 0) * 100;
+    const percentage = maxMarks > 0 ? ((totalMarks / maxMarks) * 100).toFixed(2) : '0.00';
+
+    // Determine result
+    const isAdmitted = application.status === 'admitted';
+    const resultStatus = isAdmitted ? 'ADMITTED' : application.status === 'not_admitted' ? 'NOT ADMITTED' : 'PENDING';
+
+    // Generate HTML content for Mark List PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: 'Times New Roman', serif; margin: 40px; color: #000; line-height: 1.6; }
+            .letterhead { text-align: center; border-bottom: 3px solid #0066cc; padding-bottom: 20px; margin-bottom: 30px; }
+            .school-name { font-size: 28px; font-weight: bold; color: #0066cc; margin-bottom: 5px; }
+            .school-address { font-size: 14px; color: #666; margin-bottom: 10px; }
+            .document-title { font-size: 20px; font-weight: bold; margin: 30px 0; text-align: center; text-decoration: underline; }
+            .student-details { background: #f8f9fa; padding: 20px; border-left: 4px solid #0066cc; margin: 20px 0; }
+            .marks-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .marks-table th, .marks-table td { border: 1px solid #333; padding: 12px; text-align: center; }
+            .marks-table th { background: #0066cc; color: white; font-weight: bold; }
+            .marks-table tr:nth-child(even) { background: #f9f9f9; }
+            .result-section { background: ${isAdmitted ? '#d4edda' : '#f8d7da'}; border: 1px solid ${isAdmitted ? '#c3e6cb' : '#f5c6cb'}; padding: 20px; margin: 20px 0; border-radius: 5px; text-align: center; }
+            .result-status { font-size: 24px; font-weight: bold; color: ${isAdmitted ? '#155724' : '#721c24'}; }
+            .signature-section { margin-top: 50px; display: flex; justify-content: space-between; }
+            .field-group { margin-bottom: 12px; }
+            .field-label { font-weight: bold; display: inline-block; width: 150px; }
+          </style>
+        </head>
+        <body>
+          <div class="letterhead">
+            <div class="school-name">Al Ameen Higher Secondary School</div>
+            <div class="school-address">
+              Edapal, Malappuram District, Kerala<br>
+              Phone: +91 XXXX XXXXXX | Email: info@alameenschool.edu.in
+            </div>
+          </div>
+
+          <div class="document-title">
+            ADMISSION INTERVIEW - MARK LIST
+          </div>
+
+          <div class="student-details">
+            <h3 style="margin-top: 0; color: #0066cc;">Student Information</h3>
+            <div class="field-group">
+              <span class="field-label">Application No:</span>
+              <span>${application.application_number}</span>
+            </div>
+            <div class="field-group">
+              <span class="field-label">Student Name:</span>
+              <span>${application.full_name}</span>
+            </div>
+            <div class="field-group">
+              <span class="field-label">Father's Name:</span>
+              <span>${application.father_name}</span>
+            </div>
+            <div class="field-group">
+              <span class="field-label">Mother's Name:</span>
+              <span>${application.mother_name}</span>
+            </div>
+            <div class="field-group">
+              <span class="field-label">Class Applied:</span>
+              <span>${applicationType === 'kg_std' ? 'KG & STD' : '+1 / HSS'}</span>
+            </div>
+            <div class="field-group">
+              <span class="field-label">Interview Date:</span>
+              <span>${application.interview_date ? new Date(application.interview_date).toLocaleDateString('en-IN') : 'N/A'}</span>
+            </div>
+          </div>
+
+          <h3>Interview Performance</h3>
+          
+          ${subjects && subjects.length > 0 ? `
+          <table class="marks-table">
+            <thead>
+              <tr>
+                <th>S.No.</th>
+                <th>Subject</th>
+                <th>Maximum Marks</th>
+                <th>Marks Obtained</th>
+                <th>Grade</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${subjects.map((subject, index) => {
+                const marks = subject.marks || 0;
+                const grade = marks >= 80 ? 'A+' : marks >= 70 ? 'A' : marks >= 60 ? 'B+' : marks >= 50 ? 'B' : marks >= 40 ? 'C' : 'F';
+                return `
+                  <tr>
+                    <td>${index + 1}</td>
+                    <td>${subject.subject_name}</td>
+                    <td>100</td>
+                    <td>${marks}</td>
+                    <td>${grade}</td>
+                  </tr>
+                `;
+              }).join('')}
+              <tr style="font-weight: bold; background: #e9ecef;">
+                <td colspan="2">TOTAL</td>
+                <td>${maxMarks}</td>
+                <td>${totalMarks}</td>
+                <td>${percentage}%</td>
+              </tr>
+            </tbody>
+          </table>
+          ` : `
+          <div style="text-align: center; padding: 20px; background: #f8f9fa; border: 1px solid #dee2e6;">
+            <p><em>Interview marks are being processed and will be updated soon.</em></p>
+          </div>
+          `}
+
+          <div class="result-section">
+            <div class="result-status">${resultStatus}</div>
+            ${isAdmitted ? `
+              <p style="margin-top: 15px; font-size: 16px;">
+                Congratulations! You have been selected for admission.<br>
+                Please contact the school office for further procedures.
+              </p>
+            ` : application.status === 'not_admitted' ? `
+              <p style="margin-top: 15px; font-size: 16px;">
+                We regret to inform you that you have not been selected for admission.<br>
+                Thank you for your interest in our school.
+              </p>
+            ` : `
+              <p style="margin-top: 15px; font-size: 16px;">
+                Final admission result will be announced soon.<br>
+                Please stay tuned for further updates.
+              </p>
+            `}
+          </div>
+
+          <div class="signature-section">
+            <div>
+              <br><br>
+              <strong>Interview Panel</strong><br>
+              Al Ameen Higher Secondary School
+            </div>
+            <div>
+              <br><br>
+              <strong>Principal</strong><br>
+              Al Ameen Higher Secondary School
+            </div>
+          </div>
+
+          <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
+            <p>This is a computer-generated document issued on ${new Date().toLocaleDateString('en-IN')}</p>
+            <p>For any queries regarding this mark list, please contact the school office.</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    console.log('Mark list HTML generated successfully');
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        htmlContent,
+        applicationData: application,
+        subjects: subjects || [],
+        totalMarks,
+        percentage,
+        resultStatus,
+        filename: `Mark_List_${applicationNumber}.pdf`
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+
+  } catch (error) {
+    console.error('Error in generate-mark-list function:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});

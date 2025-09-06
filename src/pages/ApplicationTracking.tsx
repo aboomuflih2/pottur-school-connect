@@ -149,6 +149,112 @@ export function ApplicationTracking() {
     }
   };
 
+  const downloadInterviewLetter = async () => {
+    if (!application || !applicationType) return;
+
+    setDownloadingPdf(true);
+    try {
+      console.log('Calling interview letter function with:', {
+        applicationNumber: application.application_number,
+        applicationType
+      });
+
+      const { data, error } = await supabase.functions.invoke('generate-interview-letter', {
+        body: { 
+          applicationNumber: application.application_number, 
+          applicationType 
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      console.log('Interview letter response:', data);
+
+      if (data?.htmlContent) {
+        // Create a new window with the HTML content for printing/saving as PDF
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(data.htmlContent);
+          printWindow.document.close();
+          // Auto-trigger print dialog which allows saving as PDF
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        }
+      }
+
+      toast({
+        title: "Interview Letter Generated",
+        description: "Interview call letter PDF is ready for download",
+      });
+    } catch (error) {
+      console.error('Error generating interview letter:', error);
+      toast({
+        title: "Download Failed",
+        description: `Unable to generate interview letter: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const downloadMarkList = async () => {
+    if (!application || !applicationType) return;
+
+    setDownloadingPdf(true);
+    try {
+      console.log('Calling mark list function with:', {
+        applicationNumber: application.application_number,
+        applicationType
+      });
+
+      const { data, error } = await supabase.functions.invoke('generate-mark-list', {
+        body: { 
+          applicationNumber: application.application_number, 
+          applicationType 
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      console.log('Mark list response:', data);
+
+      if (data?.htmlContent) {
+        // Create a new window with the HTML content for printing/saving as PDF
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(data.htmlContent);
+          printWindow.document.close();
+          // Auto-trigger print dialog which allows saving as PDF
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        }
+      }
+
+      toast({
+        title: "Mark List Generated",
+        description: "Mark list PDF is ready for download",
+      });
+    } catch (error) {
+      console.error('Error generating mark list:', error);
+      toast({
+        title: "Download Failed",
+        description: `Unable to generate mark list: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -300,23 +406,34 @@ export function ApplicationTracking() {
                 <Button 
                   className="w-full" 
                   variant="outline"
-                  onClick={() => downloadApplicationPDF()}
+                  onClick={downloadApplicationPDF}
+                  disabled={downloadingPdf}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Download Application Summary
+                  {downloadingPdf ? "Generating..." : "Download Application Summary"}
                 </Button>
 
                 {showInterviewLetter && (
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={downloadInterviewLetter}
+                    disabled={downloadingPdf}
+                  >
                     <Download className="w-4 h-4 mr-2" />
-                    Interview Call Letter
+                    {downloadingPdf ? "Generating..." : "Interview Call Letter"}
                   </Button>
                 )}
 
                 {showMarkList && (
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={downloadMarkList}
+                    disabled={downloadingPdf}
+                  >
                     <Download className="w-4 h-4 mr-2" />
-                    Mark List
+                    {downloadingPdf ? "Generating..." : "Mark List"}
                   </Button>
                 )}
               </CardContent>
