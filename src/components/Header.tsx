@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Phone, Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const Header = () => {
+interface HeaderProps {
+  onAdmissionsClick?: () => void;
+}
+
+const Header = ({ onAdmissionsClick }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigationItems = [
@@ -61,7 +65,11 @@ const Header = () => {
                 {item.name}
               </Link>
             ))}
-            <Button variant="default" className="bg-gradient-primary hover:bg-primary-light">
+            <Button 
+              variant="default" 
+              className="bg-gradient-primary hover:bg-primary-light"
+              onClick={onAdmissionsClick}
+            >
               Admissions Open
             </Button>
           </div>
@@ -91,7 +99,10 @@ const Header = () => {
                   {item.name}
                 </Link>
               ))}
-              <Button className="bg-gradient-primary hover:bg-primary-light mt-2">
+              <Button 
+                className="bg-gradient-primary hover:bg-primary-light mt-2"
+                onClick={onAdmissionsClick}
+              >
                 Admissions Open
               </Button>
             </div>
