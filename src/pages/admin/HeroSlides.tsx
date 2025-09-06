@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, GripVertical, Upload, X } from 'lucide-react';
 
 interface HeroSlide {
   id: string;
@@ -35,7 +35,12 @@ const HeroSlidesManager = () => {
     button_link: '',
     display_order: 0,
     is_active: true,
+    background_image: null as string | null,
   });
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadSlides();
@@ -62,15 +67,59 @@ const HeroSlidesManager = () => {
     }
   };
 
+  const uploadImage = async (): Promise<string | null> => {
+    if (!uploadedImage) return null;
+
+    setUploading(true);
+    try {
+      const fileExt = uploadedImage.name.split('.').pop();
+      const fileName = `hero-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('hero-images')
+        .upload(fileName, uploadedImage);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('hero-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Upload Error',
+        description: 'Failed to upload image',
+      });
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      let slideData = { ...formData };
+
+      if (uploadedImage) {
+        const imageUrl = await uploadImage();
+        if (imageUrl) {
+          slideData = { ...slideData, background_image: imageUrl };
+        }
+      } else if (editingSlide && !uploadedImage && !imagePreview) {
+        // If editing and no new image and no preview, clear the background_image
+        slideData = { ...slideData, background_image: null };
+      }
+
       if (editingSlide) {
         // Update existing slide
         const { error } = await supabase
           .from('hero_slides')
-          .update(formData)
+          .update(slideData)
           .eq('id', editingSlide.id);
 
         if (error) throw error;
@@ -83,7 +132,7 @@ const HeroSlidesManager = () => {
         // Create new slide
         const { error } = await supabase
           .from('hero_slides')
-          .insert([formData]);
+          .insert([slideData]);
 
         if (error) throw error;
 
@@ -107,6 +156,35 @@ const HeroSlidesManager = () => {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Please select an image smaller than 5MB',
+        });
+        return;
+      }
+
+      setUploadedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setUploadedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleEdit = (slide: HeroSlide) => {
     setEditingSlide(slide);
     setFormData({
@@ -116,7 +194,10 @@ const HeroSlidesManager = () => {
       button_link: slide.button_link,
       display_order: slide.display_order,
       is_active: slide.is_active,
+      background_image: slide.background_image,
     });
+    setImagePreview(slide.background_image);
+    setUploadedImage(null);
     setShowForm(true);
   };
 
@@ -180,7 +261,13 @@ const HeroSlidesManager = () => {
       button_link: '',
       display_order: slides.length,
       is_active: true,
+      background_image: null,
     });
+    setUploadedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   if (loading) {
@@ -277,6 +364,55 @@ const HeroSlidesManager = () => {
                 </div>
               </div>
 
+              {/* Background Image Upload */}
+              <div className="space-y-2">
+                <Label>Background Image (Optional)</Label>
+                <div className="border-2 border-dashed border-border rounded-lg p-6">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={removeImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <div className="space-y-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                        >
+                          {uploading ? 'Uploading...' : 'Choose Image'}
+                        </Button>
+                        <p className="text-sm text-muted-foreground">
+                          PNG, JPG up to 5MB
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                </div>
+              </div>
+
               <div className="flex items-center space-x-2">
                 <Switch
                   id="is_active"
@@ -326,6 +462,9 @@ const HeroSlidesManager = () => {
                     <div className="flex items-center gap-4 text-sm">
                       <span><strong>Button:</strong> {slide.button_text}</span>
                       <span><strong>Link:</strong> {slide.button_link}</span>
+                      {slide.background_image && (
+                        <span><strong>Image:</strong> ✅ Custom background</span>
+                      )}
                     </div>
                   </div>
                 </div>

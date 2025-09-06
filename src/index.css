@@ -47,7 +47,7 @@
 
     /* School Brand Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(212 47% 23%), hsl(212 47% 35%));
-    --gradient-hero: linear-gradient(135deg, hsl(212 47% 23% / 0.95), hsl(212 47% 35% / 0.85));
+    --gradient-hero: linear-gradient(135deg, hsl(212 47% 23% / 0.5), hsl(212 47% 35% / 0.4));
     --gradient-accent: linear-gradient(135deg, hsl(45 93% 47%), hsl(45 93% 65%));
     --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 16% 98%));
 

@@ -1,52 +1,87 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-school-building.jpg";
 import studentsImage from "@/assets/students-studying.jpg";
 
+interface HeroSlide {
+  id: string;
+  slide_title: string;
+  slide_subtitle: string;
+  background_image: string | null;
+  button_text: string;
+  button_link: string;
+  display_order: number;
+  is_active: boolean;
+}
+
 const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const slides = [
-    {
-      id: 1,
-      title: "Excellence in Education",
-      subtitle: "Shaping Future Leaders at Modern Higher Secondary School, Pottur",
-      image: heroImage,
-      cta: {
-        text: "Explore Academics",
-        link: "/academics"
-      }
-    },
-    {
-      id: 2,
-      title: "Admissions Open 2024-25",
-      subtitle: "Join Kerala's Premier Educational Institution - DHSE Code: 11181",
-      image: studentsImage,
-      cta: {
-        text: "Apply Now",
-        link: "/admissions"
-      }
-    },
-    {
-      id: 3,
-      title: "Nurturing Excellence Since Foundation",
-      subtitle: "Private Unaided Institution by Crescent Educational Trust",
-      image: heroImage,
-      cta: {
-        text: "Our Legacy",
-        link: "/about"
-      }
+  useEffect(() => {
+    loadSlides();
+  }, []);
+
+  const loadSlides = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hero_slides')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (error) throw error;
+      setSlides(data || []);
+    } catch (error) {
+      console.error('Error loading slides:', error);
+      // Fallback to default slides
+      setSlides([
+        {
+          id: '1',
+          slide_title: "Excellence in Education",
+          slide_subtitle: "Shaping Future Leaders at Modern Higher Secondary School, Pottur",
+          background_image: null,
+          button_text: "Explore Academics",
+          button_link: "/academics",
+          display_order: 1,
+          is_active: true
+        },
+        {
+          id: '2',
+          slide_title: "Admissions Open 2024-25",
+          slide_subtitle: "Join Kerala's Premier Educational Institution - DHSE Code: 11181",
+          background_image: null,
+          button_text: "Apply Now",
+          button_link: "/admissions",
+          display_order: 2,
+          is_active: true
+        }
+      ]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const getSlideImage = (slide: HeroSlide, index: number) => {
+    if (slide.background_image) {
+      return slide.background_image;
+    }
+    // Fallback to default images
+    return index % 2 === 0 ? heroImage : studentsImage;
+  };
 
   // Auto-play functionality
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
+    if (slides.length > 0) {
+      const timer = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }, 5000);
 
-    return () => clearInterval(timer);
+      return () => clearInterval(timer);
+    }
   }, [slides.length]);
 
   const nextSlide = () => {
@@ -56,6 +91,25 @@ const HeroSection = () => {
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
+
+  if (loading) {
+    return (
+      <section className="relative h-[70vh] lg:h-[80vh] overflow-hidden bg-muted flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </section>
+    );
+  }
+
+  if (slides.length === 0) {
+    return (
+      <section className="relative h-[70vh] lg:h-[80vh] overflow-hidden bg-muted flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-primary mb-4">Welcome to Modern Higher Secondary School</h1>
+          <p className="text-xl text-muted-foreground">Excellence in Education</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="relative h-[70vh] lg:h-[80vh] overflow-hidden">
@@ -71,8 +125,8 @@ const HeroSection = () => {
             {/* Background Image with Overlay */}
             <div className="absolute inset-0">
               <img
-                src={slide.image}
-                alt={slide.title}
+                src={getSlideImage(slide, index)}
+                alt={slide.slide_title}
                 className="w-full h-full object-cover"
                 loading={index === 0 ? "eager" : "lazy"}
               />
@@ -84,16 +138,16 @@ const HeroSection = () => {
               <div className="container mx-auto px-4">
                 <div className="max-w-3xl">
                   <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-white mb-6 leading-tight">
-                    {slide.title}
+                    {slide.slide_title}
                   </h1>
                   <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-8 leading-relaxed">
-                    {slide.subtitle}
+                    {slide.slide_subtitle}
                   </p>
                   <Button
                     size="lg"
                     className="bg-accent hover:bg-accent-light text-accent-foreground font-semibold px-8 py-4 text-lg shadow-glow transition-smooth"
                   >
-                    {slide.cta.text}
+                    {slide.button_text}
                   </Button>
                 </div>
               </div>
