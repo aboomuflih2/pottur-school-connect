@@ -36,6 +36,7 @@ export function ApplicationTracking() {
   const [application, setApplication] = useState<ApplicationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [applicationType, setApplicationType] = useState<"kg_std" | "plus_one" | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const applicationNumber = searchParams.get("app");
   const mobileNumber = searchParams.get("mobile");
@@ -104,6 +105,49 @@ export function ApplicationTracking() {
 
     fetchApplication();
   }, [applicationNumber, mobileNumber, navigate, toast]);
+
+  const downloadApplicationPDF = async () => {
+    if (!application || !applicationType) return;
+
+    setDownloadingPdf(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-application-pdf', {
+        body: { 
+          applicationNumber: application.application_number, 
+          applicationType 
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.htmlContent) {
+        // Create a new window with the HTML content for printing/saving as PDF
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(data.htmlContent);
+          printWindow.document.close();
+          // Auto-trigger print dialog which allows saving as PDF
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        }
+      }
+
+      toast({
+        title: "PDF Generated",
+        description: "Application summary PDF is ready for download",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "Unable to generate PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -253,6 +297,15 @@ export function ApplicationTracking() {
                 <CardDescription>Available documents for download</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
+                <Button 
+                  className="w-full" 
+                  variant="outline"
+                  onClick={() => downloadApplicationPDF()}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Application Summary
+                </Button>
+
                 {showInterviewLetter && (
                   <Button className="w-full" variant="outline">
                     <Download className="w-4 h-4 mr-2" />
@@ -265,12 +318,6 @@ export function ApplicationTracking() {
                     <Download className="w-4 h-4 mr-2" />
                     Mark List
                   </Button>
-                )}
-
-                {!showInterviewLetter && !showMarkList && (
-                  <p className="text-sm text-muted-foreground">
-                    No downloads available yet. Documents will appear here based on your application status.
-                  </p>
                 )}
               </CardContent>
             </Card>

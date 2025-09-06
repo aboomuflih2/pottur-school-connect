@@ -1,14 +1,58 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, Home } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export function ApplicationSuccess() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const applicationNumber = searchParams.get("app");
   const applicationType = searchParams.get("type");
+
+  const downloadApplicationPDF = async () => {
+    if (!applicationNumber || !applicationType) return;
+
+    setDownloadingPdf(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-application-pdf', {
+        body: { applicationNumber, applicationType }
+      });
+
+      if (error) throw error;
+
+      if (data?.htmlContent) {
+        // Create a new window with the HTML content for printing/saving as PDF
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(data.htmlContent);
+          printWindow.document.close();
+          // Auto-trigger print dialog which allows saving as PDF
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        }
+      }
+
+      toast({
+        title: "PDF Generated",
+        description: "Application summary PDF is ready for download",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "Unable to generate PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   useEffect(() => {
     // Redirect if no application number
@@ -17,14 +61,11 @@ export function ApplicationSuccess() {
       return;
     }
 
-    // Auto-download PDF summary (simulated)
-    const downloadPDF = () => {
-      // In a real implementation, this would trigger a PDF download
-      // For now, we'll show a toast message
-      console.log("Auto-downloading PDF for application:", applicationNumber);
-    };
+    // Auto-download PDF summary after a short delay
+    const timer = setTimeout(() => {
+      downloadApplicationPDF();
+    }, 2000);
 
-    const timer = setTimeout(downloadPDF, 1000);
     return () => clearTimeout(timer);
   }, [applicationNumber, applicationType, navigate]);
 
@@ -96,6 +137,16 @@ export function ApplicationSuccess() {
               >
                 <Home className="w-4 h-4 mr-2" />
                 Back to Home
+              </Button>
+              
+              <Button
+                onClick={downloadApplicationPDF}
+                variant="outline"
+                className="flex-1"
+                disabled={downloadingPdf}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {downloadingPdf ? "Generating PDF..." : "Download Again"}
               </Button>
               
               <Button
