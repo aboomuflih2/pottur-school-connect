@@ -234,6 +234,15 @@ export function ApplicationTracking() {
 
       console.log('Mark list response:', data);
 
+      if (!data?.success) {
+        toast({
+          title: "Mark List Not Available",
+          description: data?.error || "Mark list is not yet available for this application.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (data?.htmlContent) {
         // Create a new window with the HTML content for printing/saving as PDF
         const printWindow = window.open('', '_blank');
@@ -247,9 +256,12 @@ export function ApplicationTracking() {
         }
       }
 
+      const hasMarks = data.subjects && data.subjects.some(s => s.marks !== null);
       toast({
         title: "Mark List Generated",
-        description: "Mark list PDF is ready for download",
+        description: hasMarks ? 
+          "Mark list with interview scores opened for printing!" : 
+          "Mark list generated (interview marks will be updated after evaluation).",
       });
     } catch (error) {
       console.error('Error generating mark list:', error);

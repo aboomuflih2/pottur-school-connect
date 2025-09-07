@@ -62,10 +62,13 @@ serve(async (req) => {
       );
     }
 
-    // Fetch interview subjects and marks
+    // Fetch interview subjects and marks with template data
     const { data: subjects, error: subjectsError } = await supabase
       .from('interview_subjects')
-      .select('*')
+      .select(`
+        *,
+        template:interview_subject_templates!inner(max_marks, display_order)
+      `)
       .eq('application_id', application.id)
       .eq('application_type', applicationType);
 
@@ -77,11 +80,31 @@ serve(async (req) => {
       );
     }
 
-    console.log('Subjects found:', subjects?.length || 0);
+    // If no subjects found, get templates for this form type to show structure
+    let subjectsWithTemplate = subjects;
+    if (!subjects || subjects.length === 0) {
+      console.log('No interview subjects found, fetching templates');
+      const { data: templates, error: templatesError } = await supabase
+        .from('interview_subject_templates')
+        .select('*')
+        .eq('form_type', applicationType)
+        .eq('is_active', true)
+        .order('display_order');
 
-    // Calculate total marks
-    const totalMarks = subjects?.reduce((sum, subject) => sum + (subject.marks || 0), 0) || 0;
-    const maxMarks = (subjects?.length || 0) * 100;
+      if (!templatesError && templates && templates.length > 0) {
+        subjectsWithTemplate = templates.map(template => ({
+          subject_name: template.subject_name,
+          marks: null,
+          template: { max_marks: template.max_marks, display_order: template.display_order }
+        }));
+      }
+    }
+
+    console.log('Subjects found:', subjectsWithTemplate?.length || 0);
+
+    // Calculate total marks using template max_marks
+    const totalMarks = subjectsWithTemplate?.reduce((sum, subject) => sum + (subject.marks || 0), 0) || 0;
+    const maxMarks = subjectsWithTemplate?.reduce((sum, subject) => sum + (subject.template?.max_marks || 25), 0) || 0;
     const percentage = maxMarks > 0 ? ((totalMarks / maxMarks) * 100).toFixed(2) : '0.00';
 
     // Determine result
@@ -113,10 +136,10 @@ serve(async (req) => {
         </head>
         <body>
           <div class="letterhead">
-            <div class="school-name">Al Ameen Higher Secondary School</div>
+            <div class="school-name">Modern Higher Secondary School, Pottur</div>
             <div class="school-address">
-              Edapal, Malappuram District, Kerala<br>
-              Phone: +91 XXXX XXXXXX | Email: info@alameenschool.edu.in
+              Pottur, Malappuram District, Kerala<br>
+              Email: web.modernhss@gmail.com
             </div>
           </div>
 
@@ -154,7 +177,7 @@ serve(async (req) => {
 
           <h3>Interview Performance</h3>
           
-          ${subjects && subjects.length > 0 ? `
+          ${subjectsWithTemplate && subjectsWithTemplate.length > 0 ? `
           <table class="marks-table">
             <thead>
               <tr>
@@ -166,15 +189,20 @@ serve(async (req) => {
               </tr>
             </thead>
             <tbody>
-              ${subjects.map((subject, index) => {
+              ${subjectsWithTemplate.map((subject, index) => {
                 const marks = subject.marks || 0;
-                const grade = marks >= 80 ? 'A+' : marks >= 70 ? 'A' : marks >= 60 ? 'B+' : marks >= 50 ? 'B' : marks >= 40 ? 'C' : 'F';
+                const maxSubjectMarks = subject.template?.max_marks || 25;
+                const percentage = maxSubjectMarks > 0 ? (marks / maxSubjectMarks) * 100 : 0;
+                const grade = marks === null ? 'N/A' : 
+                  percentage >= 80 ? 'A+' : percentage >= 70 ? 'A' : 
+                  percentage >= 60 ? 'B+' : percentage >= 50 ? 'B' : 
+                  percentage >= 40 ? 'C' : 'F';
                 return `
                   <tr>
                     <td>${index + 1}</td>
                     <td>${subject.subject_name}</td>
-                    <td>100</td>
-                    <td>${marks}</td>
+                    <td>${maxSubjectMarks}</td>
+                    <td>${marks !== null ? marks : '-'}</td>
                     <td>${grade}</td>
                   </tr>
                 `;
@@ -189,7 +217,7 @@ serve(async (req) => {
           </table>
           ` : `
           <div style="text-align: center; padding: 20px; background: #f8f9fa; border: 1px solid #dee2e6;">
-            <p><em>Interview marks are being processed and will be updated soon.</em></p>
+            <p><em>No interview subjects configured for this application type.</em></p>
           </div>
           `}
 
@@ -217,12 +245,12 @@ serve(async (req) => {
             <div>
               <br><br>
               <strong>Interview Panel</strong><br>
-              Al Ameen Higher Secondary School
+              Modern Higher Secondary School, Pottur
             </div>
             <div>
               <br><br>
               <strong>Principal</strong><br>
-              Al Ameen Higher Secondary School
+              Modern Higher Secondary School, Pottur
             </div>
           </div>
 
@@ -241,7 +269,7 @@ serve(async (req) => {
         success: true, 
         htmlContent,
         applicationData: application,
-        subjects: subjects || [],
+        subjects: subjectsWithTemplate || [],
         totalMarks,
         percentage,
         resultStatus,
