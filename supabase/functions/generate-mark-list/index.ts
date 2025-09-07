@@ -136,19 +136,28 @@ serve(async (req) => {
               border-radius: 8px;
               box-shadow: 0 2px 10px rgba(0,0,0,0.1);
               margin-bottom: 20px;
-              text-align: center; 
               border-bottom: 3px solid #0066cc; 
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+            }
+            .letterhead-content {
+              flex: 1;
+              text-align: left;
+            }
+            .letterhead-logo {
+              flex-shrink: 0;
+              margin-left: 20px;
             }
             .logo {
-              max-width: 150px;
+              max-width: 120px;
               height: auto;
-              margin-bottom: 10px;
             }
             .school-name { 
               font-size: 18px; 
               font-weight: bold; 
               color: #0066cc; 
-              margin: 10px 0; 
+              margin: 0 0 10px 0; 
             }
             .contact-info { 
               font-size: 11px; 
@@ -170,12 +179,16 @@ serve(async (req) => {
         </head>
         <body>
           <div class="letterhead">
-            <img src="/lovable-uploads/d526aeda-08eb-46c2-a4d1-d0a41f2fe9de.png" alt="School Logo" class="logo">
-            <div class="school-name">MODERN HIGHER SECONDARY SCHOOL, POTTUR</div>
-            <div class="contact-info">
-              Mudur P.O., Vattamkulam Via, Edappal, Malappuram, Kerala - 679578<br>
-              Email: modernpotur@gmail.com | Phone: 0494-2699645, 96454 99921<br>
-              DHSE Code: 11181
+            <div class="letterhead-content">
+              <div class="school-name">MODERN HIGHER SECONDARY SCHOOL, POTTUR</div>
+              <div class="contact-info">
+                Mudur P.O., Vattamkulam Via, Edappal, Malappuram, Kerala - 679578<br>
+                Email: modernpotur@gmail.com | Phone: 0494-2699645, 96454 99921<br>
+                DHSE Code: 11181
+              </div>
+            </div>
+            <div class="letterhead-logo">
+              <img src="/lovable-uploads/d526aeda-08eb-46c2-a4d1-d0a41f2fe9de.png" alt="School Logo" class="logo">
             </div>
           </div>
 

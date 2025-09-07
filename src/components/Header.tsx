@@ -49,6 +49,10 @@ const Header = ({ onAdmissionsClick }: HeaderProps) => {
               src="/lovable-uploads/d6a40436-db2a-426b-8cac-f4b879c3f89a.png" 
               alt="Modern Higher Secondary School Logo" 
               className="w-12 h-12 object-contain"
+              onError={(e) => {
+                console.error('Logo failed to load:', e.currentTarget.src);
+                e.currentTarget.style.display = 'none';
+              }}
             />
             <div>
               <h1 className="text-xl font-heading font-bold text-primary">Modern HSS</h1>
