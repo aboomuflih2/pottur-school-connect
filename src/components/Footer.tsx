@@ -82,7 +82,7 @@ const Footer = () => {
           <div className="lg:col-span-1">
             <div className="flex items-center gap-4 mb-6">
               <img 
-                src="/lovable-uploads/6b969998-42da-4e19-847e-50a96cf1b825.png" 
+                src="/lovable-uploads/d6a40436-db2a-426b-8cac-f4b879c3f89a.png" 
                 alt="Modern Higher Secondary School Logo" 
                 className="w-12 h-12 object-contain"
               />

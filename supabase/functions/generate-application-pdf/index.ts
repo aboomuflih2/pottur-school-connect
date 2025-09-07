@@ -49,9 +49,48 @@ serve(async (req) => {
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-            .header { text-align: center; border-bottom: 2px solid #0066cc; padding-bottom: 20px; margin-bottom: 30px; }
-            .school-name { font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 5px; }
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              padding: 20px; 
+              background-color: #f9f9f9; 
+            }
+            .letterhead {
+              background: white;
+              padding: 20px;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+              margin-bottom: 20px;
+              text-align: center;
+              border-bottom: 3px solid #2563eb;
+            }
+            .logo {
+              max-width: 150px;
+              height: auto;
+              margin-bottom: 10px;
+            }
+            .school-name {
+              font-size: 18px;
+              font-weight: bold;
+              color: #1e40af;
+              margin: 10px 0;
+            }
+            .contact-info {
+              font-size: 11px;
+              color: #6b7280;
+              line-height: 1.4;
+            }
+            .content {
+              background: white;
+              padding: 30px;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            h1 { 
+              color: #1e40af; 
+              border-bottom: 2px solid #2563eb; 
+              padding-bottom: 10px; 
+            }
             .app-title { font-size: 18px; margin-top: 10px; }
             .app-number { background: #f0f8ff; padding: 15px; border-left: 4px solid #0066cc; margin: 20px 0; }
             .section { margin-bottom: 25px; }
@@ -63,27 +102,29 @@ serve(async (req) => {
             .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
           </style>
         </head>
-        <body>
-          <div class="header">
+          <div class="letterhead">
+            <img src="/lovable-uploads/d526aeda-08eb-46c2-a4d1-d0a41f2fe9de.png" alt="School Logo" class="logo">
             <div class="school-name">MODERN HIGHER SECONDARY SCHOOL, POTTUR</div>
-            <div>Application Summary</div>
-            <div class="app-title">${applicationType === 'kg_std' ? 'KG & STD' : '+1 / HSS'} Application</div>
-            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+            <div class="contact-info">
               Mudur P.O., Vattamkulam Via, Edappal, Malappuram, Kerala - 679578<br>
-              Email: modernpotur@gmail.com | Phone: 0494-2699645, 96454 99921 | DHSE Code: 11181
+              Email: modernpotur@gmail.com | Phone: 0494-2699645, 96454 99921<br>
+              DHSE Code: 11181
             </div>
           </div>
-
-          <div class="app-number">
-            <strong>Application Number: ${application.application_number}</strong>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Personal Information</div>
-            <div class="field-group">
-              <div class="field-label">Full Name:</div>
-              <div class="field-value">${application.full_name}</div>
-            </div>
+          
+          <div class="content">
+            <h1>Application Summary</h1>
+            
+            <div class="application-details">
+              <div class="detail-group">
+                <div class="label">Application Number:</div>
+                <div class="value">${application.application_number || 'N/A'}</div>
+              </div>
+              
+              <div class="detail-group">
+                <div class="label">Student Name:</div>
+                <div class="value">${application.full_name || 'N/A'}</div>
+              </div>
             <div class="field-group">
               <div class="field-label">Date of Birth:</div>
               <div class="field-value">${application.date_of_birth}</div>

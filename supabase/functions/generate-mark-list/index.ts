@@ -130,9 +130,31 @@ serve(async (req) => {
         <head>
           <style>
             body { font-family: 'Times New Roman', serif; margin: 40px; color: #000; line-height: 1.6; }
-            .letterhead { text-align: center; border-bottom: 3px solid #0066cc; padding-bottom: 20px; margin-bottom: 30px; }
-            .school-name { font-size: 28px; font-weight: bold; color: #0066cc; margin-bottom: 5px; }
-            .school-address { font-size: 14px; color: #666; margin-bottom: 10px; }
+            .letterhead { 
+              background: white;
+              padding: 20px;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+              margin-bottom: 20px;
+              text-align: center; 
+              border-bottom: 3px solid #0066cc; 
+            }
+            .logo {
+              max-width: 150px;
+              height: auto;
+              margin-bottom: 10px;
+            }
+            .school-name { 
+              font-size: 18px; 
+              font-weight: bold; 
+              color: #0066cc; 
+              margin: 10px 0; 
+            }
+            .contact-info { 
+              font-size: 11px; 
+              color: #666; 
+              line-height: 1.4;
+            }
             .document-title { font-size: 20px; font-weight: bold; margin: 30px 0; text-align: center; text-decoration: underline; }
             .student-details { background: #f8f9fa; padding: 20px; border-left: 4px solid #0066cc; margin: 20px 0; }
             .marks-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
@@ -148,10 +170,12 @@ serve(async (req) => {
         </head>
         <body>
           <div class="letterhead">
+            <img src="/lovable-uploads/d526aeda-08eb-46c2-a4d1-d0a41f2fe9de.png" alt="School Logo" class="logo">
             <div class="school-name">MODERN HIGHER SECONDARY SCHOOL, POTTUR</div>
-            <div class="school-address">
+            <div class="contact-info">
               Mudur P.O., Vattamkulam Via, Edappal, Malappuram, Kerala - 679578<br>
-              Phone: 0494-2699645, 96454 99921 | Email: modernpotur@gmail.com | DHSE Code: 11181
+              Email: modernpotur@gmail.com | Phone: 0494-2699645, 96454 99921<br>
+              DHSE Code: 11181
             </div>
           </div>
 
