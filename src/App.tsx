@@ -27,6 +27,7 @@ import GalleryManager from "./pages/admin/GalleryManager";
 import SocialLinksManager from "./pages/admin/SocialLinksManager";
 import AdmissionForms from "./pages/admin/AdmissionForms";
 import AdmissionApplications from "./pages/admin/AdmissionApplications";
+import InterviewSettings from "./pages/admin/InterviewSettings";
 import ApplicationDetail from "./pages/admin/ApplicationDetail";
 import { KGStdApplicationForm } from "./components/admissions/KGStdApplicationForm";
 import { PlusOneApplicationForm } from "./components/admissions/PlusOneApplicationForm";
@@ -75,6 +76,7 @@ const App = () => (
                   <Route path="social-links" element={<SocialLinksManager />} />
                   <Route path="admission-forms" element={<AdmissionForms />} />
                   <Route path="admission-applications" element={<AdmissionApplications />} />
+                  <Route path="interview-settings" element={<InterviewSettings />} />
                   <Route path="admissions/application/:type/:id" element={<ApplicationDetail />} />
                   <Route index element={<AdminDashboard />} />
                 </Routes>

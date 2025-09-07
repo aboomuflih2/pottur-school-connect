@@ -20,7 +20,8 @@ import {
   Images,
   Settings,
   GraduationCap,
-  Share2
+  Share2,
+  ClipboardList
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -67,6 +68,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const admissionsItems = [
     { href: '/admin/admission-forms', label: 'Form Management', icon: Settings },
     { href: '/admin/admission-applications', label: 'Applications', icon: Users },
+    { href: '/admin/interview-settings', label: 'Interview Settings', icon: ClipboardList },
   ];
 
   const siteSettingsItems = [

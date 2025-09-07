@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, User, Phone, Mail, MapPin, Calendar, School, CheckCircle } from "lucide-react";
+import { ArrowLeft, User, Phone, Mail, MapPin, Calendar, School, CheckCircle, Trophy, Save } from "lucide-react";
 
 interface KGStdApplication {
   id: string;
@@ -67,6 +67,19 @@ interface PlusOneApplication {
   interview_time?: string;
 }
 
+interface SubjectTemplate {
+  id: string;
+  subject_name: string;
+  max_marks: number;
+}
+
+interface InterviewSubject {
+  id?: string;
+  subject_name: string;
+  marks: number;
+  max_marks: number;
+}
+
 type Application = KGStdApplication | PlusOneApplication;
 
 const statusOptions = [
@@ -100,12 +113,17 @@ export default function ApplicationDetail() {
   const [newStatus, setNewStatus] = useState("");
   const [interviewDate, setInterviewDate] = useState("");
   const [interviewTime, setInterviewTime] = useState("");
+  const [interviewSubjects, setInterviewSubjects] = useState<InterviewSubject[]>([]);
+  const [savingMarks, setSavingMarks] = useState(false);
 
   useEffect(() => {
     if (type && id) {
       fetchApplication();
+      if (application?.status === "interview_complete") {
+        fetchInterviewSubjects();
+      }
     }
-  }, [type, id]);
+  }, [type, id, application?.status]);
 
   const fetchApplication = async () => {
     if (!type || !id) return;
@@ -126,6 +144,11 @@ export default function ApplicationDetail() {
       setNewStatus(data.status);
       setInterviewDate(data.interview_date || "");
       setInterviewTime(data.interview_time || "");
+      
+      // Fetch interview subjects if interview is complete
+      if (data.status === "interview_complete") {
+        await fetchInterviewSubjects();
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -135,6 +158,105 @@ export default function ApplicationDetail() {
       navigate("/admin/admission-applications");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInterviewSubjects = async () => {
+    if (!type || !id) return;
+    
+    try {
+      // First, get subject templates for the form type
+      const formType = type === "kg_std" ? "kg_std" : "plus_one";
+      const { data: templates, error: templatesError } = await supabase
+        .from("interview_subject_templates")
+        .select("*")
+        .eq("form_type", formType)
+        .eq("is_active", true)
+        .order("display_order");
+
+      if (templatesError) throw templatesError;
+
+      // Then, get existing marks for this application
+      const { data: existingMarks, error: marksError } = await supabase
+        .from("interview_subjects")
+        .select("*")
+        .eq("application_id", id)
+        .eq("application_type", type);
+
+      if (marksError) throw marksError;
+
+      // Combine templates with existing marks
+      const subjects: InterviewSubject[] = templates?.map(template => {
+        const existingMark = existingMarks?.find(mark => mark.subject_name === template.subject_name);
+        return {
+          id: existingMark?.id,
+          subject_name: template.subject_name,
+          marks: existingMark?.marks || 0,
+          max_marks: template.max_marks,
+        };
+      }) || [];
+
+      setInterviewSubjects(subjects);
+    } catch (error) {
+      console.error("Error fetching interview subjects:", error);
+    }
+  };
+
+  const updateSubjectMark = (subjectName: string, marks: number) => {
+    setInterviewSubjects(prev => 
+      prev.map(subject => 
+        subject.subject_name === subjectName 
+          ? { ...subject, marks } 
+          : subject
+      )
+    );
+  };
+
+  const saveMarks = async () => {
+    if (!application || !id || !type) return;
+    
+    setSavingMarks(true);
+    try {
+      // Delete existing marks for this application
+      await supabase
+        .from("interview_subjects")
+        .delete()
+        .eq("application_id", id)
+        .eq("application_type", type);
+
+      // Insert new marks
+      const marksToInsert = interviewSubjects
+        .filter(subject => subject.marks > 0)
+        .map(subject => ({
+          application_id: id,
+          application_type: type,
+          subject_name: subject.subject_name,
+          marks: subject.marks,
+        }));
+
+      if (marksToInsert.length > 0) {
+        const { error } = await supabase
+          .from("interview_subjects")
+          .insert(marksToInsert);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Interview marks saved successfully",
+      });
+      
+      await fetchInterviewSubjects(); // Refresh the data
+    } catch (error) {
+      console.error("Error saving marks:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save interview marks",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingMarks(false);
     }
   };
 
@@ -446,6 +568,70 @@ export default function ApplicationDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Interview Mark List Section */}
+      {application.status === "interview_complete" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5" />
+              Interview Mark List
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {interviewSubjects.length > 0 ? (
+              <>
+                <div className="grid gap-4">
+                  {interviewSubjects.map((subject) => (
+                    <div key={subject.subject_name} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <Label className="text-base font-medium">
+                          {subject.subject_name}
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max={subject.max_marks}
+                          value={subject.marks}
+                          onChange={(e) => updateSubjectMark(subject.subject_name, parseInt(e.target.value) || 0)}
+                          className="w-20 text-center"
+                        />
+                        <span className="text-muted-foreground">
+                          / {subject.max_marks}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between pt-4">
+                  <div className="text-lg font-semibold">
+                    Total: {interviewSubjects.reduce((sum, subject) => sum + subject.marks, 0)} / {interviewSubjects.reduce((sum, subject) => sum + subject.max_marks, 0)}
+                  </div>
+                  <Button 
+                    onClick={saveMarks} 
+                    disabled={savingMarks}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {savingMarks ? "Saving..." : "Save Marks"}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No interview subjects configured for this application type.</p>
+                <p className="text-sm">Please configure subjects in Interview Settings first.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

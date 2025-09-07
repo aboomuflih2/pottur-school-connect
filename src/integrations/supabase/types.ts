@@ -324,6 +324,39 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_subject_templates: {
+        Row: {
+          created_at: string
+          display_order: number
+          form_type: string
+          id: string
+          is_active: boolean
+          max_marks: number
+          subject_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          form_type: string
+          id?: string
+          is_active?: boolean
+          max_marks?: number
+          subject_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          form_type?: string
+          id?: string
+          is_active?: boolean
+          max_marks?: number
+          subject_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interview_subjects: {
         Row: {
           application_id: string
