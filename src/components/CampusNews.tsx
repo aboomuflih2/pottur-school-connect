@@ -1,38 +1,57 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+
+interface NewsPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  featured_image: string | null;
+  publication_date: string;
+  author: string;
+  slug: string;
+}
 
 const CampusNews = () => {
-  // Mock news data - in real app, this would come from API
-  const newsItems = [
-    {
-      id: 1,
-      title: "Annual Science Exhibition 2024 Registration Open",
-      excerpt: "Students from all streams are invited to participate in our annual science exhibition. Register now to showcase your innovative projects and compete for exciting prizes.",
-      image: "/placeholder-news-1.jpg",
-      date: "2024-02-15",
-      author: "Science Department",
-      slug: "science-exhibition-2024"
-    },
-    {
-      id: 2,
-      title: "Outstanding Performance in DHSE Results",
-      excerpt: "Modern HSS Pottur achieves exceptional results in Higher Secondary examinations with 100% pass rate. Our students secured top ranks in science and commerce streams.",
-      image: "/placeholder-news-2.jpg",
-      date: "2024-02-10",
-      author: "Academic Office",
-      slug: "dhse-results-2024"
-    },
-    {
-      id: 3,
-      title: "New Computer Lab Inauguration",
-      excerpt: "State-of-the-art computer laboratory with 40 latest systems inaugurated by District Collector. The lab features high-speed internet and modern software for enhanced learning.",
-      image: "/placeholder-news-3.jpg",
-      date: "2024-02-05",
-      author: "IT Department",
-      slug: "computer-lab-inauguration"
+  const [newsItems, setNewsItems] = useState<NewsPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const fetchLatestNews = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('news_posts')
+        .select('id, title, excerpt, featured_image, publication_date, author, slug')
+        .eq('is_published', true)
+        .order('publication_date', { ascending: false })
+        .limit(3);
+
+      if (fetchError) {
+        console.error('Error fetching news:', fetchError);
+        setError('Failed to load news articles');
+        return;
+      }
+
+      setNewsItems(data || []);
+    } catch (err) {
+      console.error('Error fetching news:', err);
+      setError('Failed to load news articles');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchLatestNews();
+  }, []);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -41,6 +60,14 @@ const CampusNews = () => {
       month: 'long', 
       day: 'numeric' 
     });
+  };
+
+  const handleReadMore = (slug: string) => {
+    navigate(`/news-events#${slug}`);
+  };
+
+  const handleViewAllNews = () => {
+    navigate('/news-events');
   };
 
   return (
@@ -56,65 +83,124 @@ const CampusNews = () => {
           </p>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="aspect-video" />
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-4 mb-2">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-6 w-full mb-2" />
+                  <Skeleton className="h-6 w-3/4" />
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3 mb-4" />
+                  <Skeleton className="h-4 w-20" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={fetchLatestNews} variant="outline">
+              Try Again
+            </Button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && newsItems.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">No news articles published yet.</p>
+            <Button onClick={handleViewAllNews} variant="outline">
+              Visit News Page
+            </Button>
+          </div>
+        )}
+
         {/* News Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {newsItems.map((news) => (
-            <Card key={news.id} className="overflow-hidden hover:shadow-elegant transition-smooth group bg-card">
-              {/* News Image */}
-              <div className="aspect-video bg-gradient-subtle relative overflow-hidden">
-                <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-semibold">News Image</span>
-                </div>
-              </div>
-
-              <CardHeader className="pb-3">
-                {/* Date and Author */}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    <span>{formatDate(news.date)}</span>
+        {!loading && !error && newsItems.length > 0 && (
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {newsItems.map((news) => (
+                <Card key={news.id} className="overflow-hidden hover:shadow-elegant transition-smooth group bg-card">
+                  {/* News Image */}
+                  <div className="aspect-video bg-gradient-subtle relative overflow-hidden">
+                    {news.featured_image ? (
+                      <img 
+                        src={news.featured_image} 
+                        alt={news.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                        <span className="text-primary font-semibold">News Image</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    <span>{news.author}</span>
-                  </div>
-                </div>
 
-                {/* Title */}
-                <h3 className="text-lg font-heading font-semibold text-primary line-clamp-2 group-hover:text-primary-light transition-colors">
-                  {news.title}
-                </h3>
-              </CardHeader>
+                  <CardHeader className="pb-3">
+                    {/* Date and Author */}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>{formatDate(news.publication_date)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        <span>{news.author}</span>
+                      </div>
+                    </div>
 
-              <CardContent className="pt-0">
-                {/* Excerpt */}
-                <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">
-                  {news.excerpt}
-                </p>
+                    {/* Title */}
+                    <h3 className="text-lg font-heading font-semibold text-primary line-clamp-2 group-hover:text-primary-light transition-colors">
+                      {news.title}
+                    </h3>
+                  </CardHeader>
 
-                {/* Read More Link */}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-primary hover:text-primary-light p-0 h-auto font-medium group/btn"
-                >
-                  Read More
-                  <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  <CardContent className="pt-0">
+                    {/* Excerpt */}
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">
+                      {news.excerpt}
+                    </p>
 
-        {/* View All News Button */}
-        <div className="text-center">
-          <Button 
-            size="lg"
-            className="bg-primary hover:bg-primary-light text-primary-foreground font-semibold shadow-elegant"
-          >
-            View All News & Events
-          </Button>
-        </div>
+                    {/* Read More Link */}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleReadMore(news.slug)}
+                      className="text-primary hover:text-primary-light p-0 h-auto font-medium group/btn"
+                    >
+                      Read More
+                      <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* View All News Button */}
+            <div className="text-center">
+              <Button 
+                size="lg"
+                onClick={handleViewAllNews}
+                className="bg-primary hover:bg-primary-light text-primary-foreground font-semibold shadow-elegant"
+              >
+                View All News & Events
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
