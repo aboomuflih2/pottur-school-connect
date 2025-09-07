@@ -36,12 +36,12 @@ const AboutTestimonials = () => {
 
   const loadTestimonials = async () => {
     try {
-      const { data, error } = await supabase
-        .from('testimonials')
-        .select('*')
-        .eq('is_active', true)
-        .eq('status', 'approved')
-        .order('display_order');
+        const { data, error } = await supabase
+          .from('testimonials')
+          .select('*')
+          .eq('is_active', true)
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false });
 
       if (error) throw error;
 

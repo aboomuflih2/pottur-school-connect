@@ -2,55 +2,54 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Testimonial {
+  id: string;
+  quote: string;
+  rating: number;
+  person_name: string;
+  relation: string;
+}
 
 const Testimonials = () => {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const testimonials = [
-    {
-      id: 1,
-      name: "Radhika Menon",
-      relation: "Parent of Arjun (Class 12 Science)",
-      quote: "Modern HSS Pottur has been instrumental in shaping my son's academic journey. The dedicated faculty and excellent infrastructure have provided him with the perfect environment to excel in his studies and prepare for medical entrance exams.",
-      rating: 5,
-      photo: "/placeholder-parent-1.jpg"
-    },
-    {
-      id: 2,
-      name: "Ahmed Rasheed",
-      relation: "Alumni (Batch 2020)",
-      quote: "The values and knowledge I gained at Modern HSS Pottur laid a strong foundation for my engineering studies. The teachers went beyond textbooks to ensure we understood concepts thoroughly. I'm proud to be an alumnus of this institution.",
-      rating: 5,
-      photo: "/placeholder-alumni-1.jpg"
-    },
-    {
-      id: 3,
-      name: "Priya Nair",
-      relation: "Parent of Meera (Class 11 Commerce)",
-      quote: "The holistic approach to education at Modern HSS is commendable. My daughter not only excels academically but has also developed strong leadership skills through various extracurricular activities. The school truly nurtures well-rounded individuals.",
-      rating: 5,
-      photo: "/placeholder-parent-2.jpg"
-    },
-    {
-      id: 4,
-      name: "Vishnu Kumar",
-      relation: "Alumni (Batch 2019)",
-      quote: "Modern HSS provided me with excellent preparation for competitive exams. The computer science program was particularly strong, and I secured admission to a top engineering college. Forever grateful to my teachers for their guidance.",
-      rating: 5,
-      photo: "/placeholder-alumni-2.jpg"
-    },
-    {
-      id: 5,
-      name: "Fatima Beevi",
-      relation: "Parent of Zara (Class 12 Humanities)",
-      quote: "The inclusive and supportive environment at Modern HSS has helped my daughter flourish. The faculty's personal attention to each student and the school's commitment to academic excellence is truly remarkable.",
-      rating: 5,
-      photo: "/placeholder-parent-3.jpg"
-    }
-  ];
+  // Load testimonials from database
+  useEffect(() => {
+    const loadTestimonials = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('testimonials')
+          .select('*')
+          .eq('is_active', true)
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (error) {
+          console.error('Error loading testimonials:', error);
+          return;
+        }
+
+        setTestimonials(data || []);
+      } catch (error) {
+        console.error('Error loading testimonials:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTestimonials();
+  }, []);
 
   // Auto-rotate testimonials
   useEffect(() => {
+    if (testimonials.length === 0) return;
+    
     const timer = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
     }, 7000);
@@ -59,10 +58,12 @@ const Testimonials = () => {
   }, [testimonials.length]);
 
   const nextTestimonial = () => {
+    if (testimonials.length === 0) return;
     setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
   };
 
   const prevTestimonial = () => {
+    if (testimonials.length === 0) return;
     setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
 
@@ -76,6 +77,53 @@ const Testimonials = () => {
       />
     ));
   };
+
+  if (isLoading) {
+    return (
+      <section className="py-16 lg:py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-heading font-bold text-primary mb-4">
+              What Our Community Says
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Hear from our students, parents, and alumni about their experiences at Modern Higher Secondary School, Pottur.
+            </p>
+          </div>
+          <div className="max-w-4xl mx-auto">
+            <Card className="p-8 lg:p-12 animate-pulse">
+              <div className="h-6 bg-muted rounded mb-4"></div>
+              <div className="h-4 bg-muted rounded mb-2"></div>
+              <div className="h-4 bg-muted rounded mb-8"></div>
+              <div className="h-4 bg-muted rounded mx-auto w-1/3"></div>
+            </Card>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (testimonials.length === 0) {
+    return (
+      <section className="py-16 lg:py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-heading font-bold text-primary mb-4">
+              What Our Community Says
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Hear from our students, parents, and alumni about their experiences at Modern Higher Secondary School, Pottur.
+            </p>
+          </div>
+          <div className="max-w-4xl mx-auto">
+            <Card className="p-8 lg:p-12 text-center">
+              <p className="text-muted-foreground">No testimonials available at this time.</p>
+            </Card>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 lg:py-24 bg-background">
@@ -124,14 +172,14 @@ const Testimonials = () => {
                     {/* Avatar Placeholder */}
                     <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
                       <span className="text-primary font-semibold text-lg">
-                        {testimonial.name.charAt(0)}
+                        {testimonial.person_name.charAt(0)}
                       </span>
                     </div>
 
                     {/* Name and Relation */}
                     <div className="text-center">
                       <h4 className="font-semibold text-primary text-lg">
-                        {testimonial.name}
+                        {testimonial.person_name}
                       </h4>
                       <p className="text-muted-foreground text-sm">
                         {testimonial.relation}
@@ -189,12 +237,12 @@ const Testimonials = () => {
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                   <span className="text-primary font-semibold text-xs">
-                    {testimonial.name.charAt(0)}
+                    {testimonial.person_name.charAt(0)}
                   </span>
                 </div>
                 <div>
                   <p className="font-medium text-sm text-primary">
-                    {testimonial.name}
+                    {testimonial.person_name}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {testimonial.relation}
