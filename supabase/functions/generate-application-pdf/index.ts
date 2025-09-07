@@ -65,9 +65,13 @@ serve(async (req) => {
         </head>
         <body>
           <div class="header">
-            <div class="school-name">Al Ameen Higher Secondary School</div>
+            <div class="school-name">MODERN HIGHER SECONDARY SCHOOL, POTTUR</div>
             <div>Application Summary</div>
             <div class="app-title">${applicationType === 'kg_std' ? 'KG & STD' : '+1 / HSS'} Application</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+              Mudur P.O., Vattamkulam Via, Edappal, Malappuram, Kerala - 679578<br>
+              Email: modernpotur@gmail.com | Phone: 0494-2699645, 96454 99921 | DHSE Code: 11181
+            </div>
           </div>
 
           <div class="app-number">
@@ -184,7 +188,7 @@ serve(async (req) => {
 
           <div class="footer">
             <p>Application submitted on: ${new Date(application.created_at).toLocaleDateString()}</p>
-            <p>This is a computer-generated document and does not require a signature.</p>
+            <p>This is a computer-generated document from Modern Higher Secondary School, Pottur and does not require a signature.</p>
           </div>
         </body>
       </html>

@@ -81,9 +81,11 @@ const Footer = () => {
           {/* School Information */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
-                <span className="text-accent-foreground font-bold text-xl">M</span>
-              </div>
+              <img 
+                src="/lovable-uploads/6b969998-42da-4e19-847e-50a96cf1b825.png" 
+                alt="Modern Higher Secondary School Logo" 
+                className="w-12 h-12 object-contain"
+              />
               <div>
                 <h3 className="text-xl font-heading font-bold">Modern HSS</h3>
                 <p className="text-sm text-primary-foreground/80">Pottur</p>

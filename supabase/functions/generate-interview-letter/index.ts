@@ -100,10 +100,10 @@ serve(async (req) => {
         </head>
         <body>
           <div class="letterhead">
-            <div class="school-name">Al Ameen Higher Secondary School</div>
+            <div class="school-name">MODERN HIGHER SECONDARY SCHOOL, POTTUR</div>
             <div class="school-address">
-              Edapal, Malappuram District, Kerala<br>
-              Phone: +91 XXXX XXXXXX | Email: info@alameenschool.edu.in
+              Mudur P.O., Vattamkulam Via, Edappal, Malappuram, Kerala - 679578<br>
+              Phone: 0494-2699645, 96454 99921 | Email: modernpotur@gmail.com | DHSE Code: 11181
             </div>
           </div>
 
@@ -156,7 +156,7 @@ serve(async (req) => {
             </div>
             <div class="field-group">
               <span class="field-label">Venue:</span>
-              <span><strong>Al Ameen Higher Secondary School, Edapal</strong></span>
+              <span><strong>Modern Higher Secondary School, Pottur</strong></span>
             </div>
           </div>
 
@@ -188,8 +188,8 @@ serve(async (req) => {
             <p>Regards,</p>
             <br><br>
             <strong>Principal</strong><br>
-            Al Ameen Higher Secondary School<br>
-            Edapal, Malappuram
+            Modern Higher Secondary School, Pottur<br>
+            Mudur P.O., Vattamkulam Via, Edappal, Malappuram
           </div>
 
           <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">

@@ -44,15 +44,17 @@ const Header = ({ onAdmissionsClick }: HeaderProps) => {
       <nav className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">M</span>
-            </div>
+          <Link to="/" className="flex items-center gap-4">
+            <img 
+              src="/lovable-uploads/6b969998-42da-4e19-847e-50a96cf1b825.png" 
+              alt="Modern Higher Secondary School Logo" 
+              className="w-12 h-12 object-contain"
+            />
             <div>
               <h1 className="text-xl font-heading font-bold text-primary">Modern HSS</h1>
               <p className="text-sm text-muted-foreground">Pottur</p>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">

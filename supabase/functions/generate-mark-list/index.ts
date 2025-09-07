@@ -148,10 +148,10 @@ serve(async (req) => {
         </head>
         <body>
           <div class="letterhead">
-            <div class="school-name">Modern Higher Secondary School, Pottur</div>
+            <div class="school-name">MODERN HIGHER SECONDARY SCHOOL, POTTUR</div>
             <div class="school-address">
-              Pottur, Malappuram District, Kerala<br>
-              Email: web.modernhss@gmail.com
+              Mudur P.O., Vattamkulam Via, Edappal, Malappuram, Kerala - 679578<br>
+              Phone: 0494-2699645, 96454 99921 | Email: modernpotur@gmail.com | DHSE Code: 11181
             </div>
           </div>
 
