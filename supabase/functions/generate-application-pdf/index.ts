@@ -49,69 +49,57 @@ serve(async (req) => {
       <html>
         <head>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+            :root {
+              --primary: #0b3f8a;
+              --accent: #f59e0b;
+              --text: #0f172a;
+              --muted: #6b7280;
+              --bg: #f5f7fb;
+            }
             body { 
-              font-family: Arial, sans-serif; 
+              font-family: 'Montserrat', Arial, sans-serif; 
               margin: 0; 
-              padding: 20px; 
-              background-color: #f9f9f9; 
+              padding: 24px; 
+              background-color: var(--bg); 
+              color: var(--text);
             }
             .letterhead {
-              background: white;
-              padding: 20px;
-              border-radius: 8px;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-              margin-bottom: 20px;
-              border-bottom: 3px solid #2563eb;
+              background: #f3f4f6;
+              padding: 18px 24px;
+              border-radius: 10px 10px 0 0;
               display: flex;
               justify-content: space-between;
-              align-items: flex-start;
+              align-items: center;
             }
-            .letterhead-content {
-              flex: 1;
-              text-align: left;
-            }
-            .letterhead-logo {
-              flex-shrink: 0;
-              margin-left: 20px;
-            }
-            .logo {
-              max-width: 120px;
-              height: auto;
-            }
-            .school-name {
-              font-size: 18px;
-              font-weight: bold;
-              color: #1e40af;
-              margin: 0 0 10px 0;
-            }
-            .contact-info {
-              font-size: 11px;
-              color: #6b7280;
-              line-height: 1.4;
-            }
-            .content {
-              background: white;
-              padding: 30px;
-              border-radius: 8px;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            h1 { 
-              color: #1e40af; 
-              border-bottom: 2px solid #2563eb; 
-              padding-bottom: 10px; 
-            }
-            .app-title { font-size: 18px; margin-top: 10px; }
-            .app-number { background: #f0f8ff; padding: 15px; border-left: 4px solid #0066cc; margin: 20px 0; }
-            .section { margin-bottom: 25px; }
-            .section-title { font-size: 16px; font-weight: bold; color: #0066cc; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 15px; }
-            .field-group { display: flex; margin-bottom: 10px; }
-            .field-label { font-weight: bold; width: 150px; }
-            .field-value { flex: 1; }
-            .address-section { background: #f9f9f9; padding: 15px; border-radius: 5px; }
-            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+            .letterhead-logo { flex-shrink: 0; }
+            .logo { max-width: 140px; height: auto; }
+            .letterhead-content { text-align: right; }
+            .school-name { font-size: 20px; font-weight: 700; color: var(--primary); margin: 0 0 6px 0; }
+            .contact-info { font-size: 12px; color: var(--muted); line-height: 1.5; }
+            .accent-line { height: 4px; background: var(--accent); border-radius: 0 0 8px 8px; margin-bottom: 16px; }
+
+            .content { position: relative; background: white; padding: 28px; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+            .watermark { position: absolute; inset: 0; background: url('/lovable-uploads/d6a40436-db2a-426b-8cac-f4b879c3f89a.png') center/50% no-repeat; opacity: 0.05; pointer-events: none; }
+
+            .title { text-align: center; font-size: 22px; font-weight: 700; color: var(--primary); margin: 0 0 18px 0; }
+            .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-bottom: 22px; }
+            .item { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+            .label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+            .value { font-size: 14px; color: var(--text); font-weight: 600; }
+
+            .section { margin-top: 18px; }
+            .section-title { font-size: 14px; font-weight: 700; color: var(--primary); margin: 0 0 10px 0; border-left: 3px solid var(--accent); padding-left: 10px; }
+            .box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; }
+
+            .footer { margin-top: 22px; text-align: center; font-size: 12px; color: var(--muted); }
           </style>
         </head>
           <div class="letterhead">
+            <div class="letterhead-content">
+            <div class="letterhead-logo">
+              <img src="/lovable-uploads/d526aeda-08eb-46c2-a4d1-d0a41f2fe9de.png" alt="School Logo" class="logo">
+            </div>
             <div class="letterhead-content">
               <div class="school-name">MODERN HIGHER SECONDARY SCHOOL, POTTUR</div>
               <div class="contact-info">
@@ -120,77 +108,82 @@ serve(async (req) => {
                 DHSE Code: 11181
               </div>
             </div>
-            <div class="letterhead-logo">
-              <img src="/lovable-uploads/d526aeda-08eb-46c2-a4d1-d0a41f2fe9de.png" alt="School Logo" class="logo">
-            </div>
           </div>
+          <div class="accent-line"></div>
           
           <div class="content">
-            <h1>Application Summary</h1>
-            
-            <div class="application-details">
-              <div class="detail-group">
-                <div class="label">Application Number:</div>
+            <div class="watermark"></div>
+            <h1 class="title">Application Summary</h1>
+            <div class="details-grid">
+              <div class="item">
+                <div class="label">Application Number</div>
                 <div class="value">${application.application_number || 'N/A'}</div>
               </div>
-              
-              <div class="detail-group">
-                <div class="label">Student Name:</div>
+              <div class="item">
+                <div class="label">Student Name</div>
                 <div class="value">${application.full_name || 'N/A'}</div>
               </div>
-            <div class="field-group">
-              <div class="field-label">Date of Birth:</div>
-              <div class="field-value">${application.date_of_birth}</div>
+              <div class="item">
+                <div class="label">Date of Birth</div>
+                <div class="value">${application.date_of_birth || 'N/A'}</div>
+              </div>
+              <div class="item">
+                <div class="label">Gender</div>
+                <div class="value">${application.gender || 'N/A'}</div>
+              </div>
+              <div class="item">
+                <div class="label">Mobile</div>
+                <div class="value">${application.mobile_number || 'N/A'}</div>
+              </div>
+              ${application.email ? `
+              <div class="item">
+                <div class="label">Email</div>
+                <div class="value">${application.email}</div>
+              </div>
+              ` : ''}
             </div>
-            <div class="field-group">
-              <div class="field-label">Gender:</div>
-              <div class="field-value">${application.gender}</div>
-            </div>
-            <div class="field-group">
-              <div class="field-label">Mobile:</div>
-              <div class="field-value">${application.mobile_number}</div>
-            </div>
-            ${application.email ? `
-            <div class="field-group">
-              <div class="field-label">Email:</div>
-              <div class="field-value">${application.email}</div>
-            </div>
-            ` : ''}
-          </div>
 
           <div class="section">
             <div class="section-title">Parent Information</div>
-            <div class="field-group">
-              <div class="field-label">Father's Name:</div>
-              <div class="field-value">${application.father_name}</div>
-            </div>
-            <div class="field-group">
-              <div class="field-label">Mother's Name:</div>
-              <div class="field-value">${application.mother_name}</div>
+            <div class="box">
+              <div class="details-grid">
+                <div class="item">
+                  <div class="label">Father's Name</div>
+                  <div class="value">${application.father_name || 'N/A'}</div>
+                </div>
+                <div class="item">
+                  <div class="label">Mother's Name</div>
+                  <div class="value">${application.mother_name || 'N/A'}</div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="section address-section">
+          <div class="section">
             <div class="section-title">Address Information</div>
-            <div class="field-group">
-              <div class="field-label">House Name:</div>
-              <div class="field-value">${application.house_name}</div>
-            </div>
-            <div class="field-group">
-              <div class="field-label">Panchayath:</div>
-              <div class="field-value">${application.village}</div>
-            </div>
-            <div class="field-group">
-              <div class="field-label">Post Office:</div>
-              <div class="field-value">${application.post_office}</div>
-            </div>
-            <div class="field-group">
-              <div class="field-label">District:</div>
-              <div class="field-value">${application.district}</div>
-            </div>
-            <div class="field-group">
-              <div class="field-label">Pincode:</div>
-              <div class="field-value">${application.pincode}</div>
+            <div class="box">
+              <div class="details-grid">
+                <div class="item">
+                  <div class="label">House Name</div>
+                  <div class="value">${application.house_name || 'N/A'}</div>
+                </div>
+                <div class="item">
+                  <div class="label">Panchayath</div>
+                  <div class="value">${application.village || 'N/A'}</div>
+                </div>
+                <div class="item">
+                  <div class="label">Post Office</div>
+                  <div class="value">${application.post_office || 'N/A'}</div>
+                </div>
+                <div class="item">
+                  <div class="label">District</div>
+                  <div class="value">${application.district || 'N/A'}</div>
+                </div>
+                <div class="item">
+                  <div class="label">Pincode</div>
+                  <div class="value">${application.pincode || 'N/A'}</div>
+                </div>
+              </div>
             </div>
           </div>
 
