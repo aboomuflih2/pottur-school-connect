@@ -62,45 +62,57 @@ serve(async (req) => {
       );
     }
 
-    // Fetch interview subjects and marks with template data
-    const { data: subjects, error: subjectsError } = await supabase
+    // Fetch interview subjects and marks (no FK join available) and templates separately
+    const { data: subjectMarks, error: subjectsError } = await supabase
       .from('interview_subjects')
-      .select(`
-        *,
-        template:interview_subject_templates!inner(max_marks, display_order)
-      `)
+      .select('*')
       .eq('application_id', application.id)
       .eq('application_type', applicationType);
 
     if (subjectsError) {
-      console.error('Error fetching subjects:', subjectsError);
-      return new Response(
-        JSON.stringify({ error: 'Error fetching interview subjects' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error('Error fetching interview_subjects:', subjectsError);
+      // Don't fail hard here – proceed to use templates so we can still render a structured mark list
     }
 
-    // If no subjects found, get templates for this form type to show structure
-    let subjectsWithTemplate = subjects;
-    if (!subjects || subjects.length === 0) {
-      console.log('No interview subjects found, fetching templates');
-      const { data: templates, error: templatesError } = await supabase
-        .from('interview_subject_templates')
-        .select('*')
-        .eq('form_type', applicationType)
-        .eq('is_active', true)
-        .order('display_order');
+    // Fetch templates for this form type to provide structure and max marks
+    const { data: templates, error: templatesError } = await supabase
+      .from('interview_subject_templates')
+      .select('*')
+      .eq('form_type', applicationType)
+      .eq('is_active', true)
+      .order('display_order');
 
-      if (!templatesError && templates && templates.length > 0) {
-        subjectsWithTemplate = templates.map(template => ({
-          subject_name: template.subject_name,
-          marks: null,
-          template: { max_marks: template.max_marks, display_order: template.display_order }
-        }));
-      }
+    if (templatesError) {
+      console.error('Error fetching interview_subject_templates:', templatesError);
     }
 
-    console.log('Subjects found:', subjectsWithTemplate?.length || 0);
+    // Build subjects array using templates order; merge marks by subject_name
+    let subjectsWithTemplate: Array<{ subject_name: string; marks: number | null; template: { max_marks: number; display_order: number } }>
+      = [];
+
+    if (templates && templates.length > 0) {
+      const marksByName = (subjectMarks || []).reduce<Record<string, number | null>>((acc, s) => {
+        acc[(s as any).subject_name] = (s as any).marks ?? null;
+        return acc;
+      }, {});
+
+      subjectsWithTemplate = templates.map((t) => ({
+        subject_name: (t as any).subject_name,
+        marks: marksByName[(t as any).subject_name] ?? null,
+        template: { max_marks: (t as any).max_marks, display_order: (t as any).display_order }
+      }));
+    } else if (subjectMarks && subjectMarks.length > 0) {
+      // Fallback: we have marks but no templates; assume max 25 each and keep original order
+      subjectsWithTemplate = subjectMarks.map((s, idx) => ({
+        subject_name: (s as any).subject_name,
+        marks: (s as any).marks ?? null,
+        template: { max_marks: 25, display_order: idx + 1 }
+      }));
+    } else {
+      subjectsWithTemplate = [];
+    }
+
+    console.log('Subjects resolved (after merge):', subjectsWithTemplate.length);
 
     // Calculate total marks using template max_marks
     const totalMarks = subjectsWithTemplate?.reduce((sum, subject) => sum + (subject.marks || 0), 0) || 0;
