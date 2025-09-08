@@ -708,6 +708,42 @@ export type Database = {
         }
         Relationships: []
       }
+      school_stats: {
+        Row: {
+          created_at: string
+          display_order: number
+          icon_name: string
+          id: string
+          is_active: boolean
+          label: string
+          suffix: string | null
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          suffix?: string | null
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          suffix?: string | null
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
       social_media_links: {
         Row: {
           created_at: string

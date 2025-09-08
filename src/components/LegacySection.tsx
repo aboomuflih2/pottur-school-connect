@@ -1,30 +1,50 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Award, Users, BookOpen, Trophy } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { icons } from "lucide-react";
+
+interface SchoolStat {
+  id: string;
+  label: string;
+  value: number;
+  suffix: string;
+  icon_name: string;
+  display_order: number;
+  is_active: boolean;
+}
 
 const LegacySection = () => {
-  const achievements = [
-    {
-      icon: Users,
-      number: "500+",
-      label: "Students Enrolled"
-    },
-    {
-      icon: Award,
-      number: "25+",
-      label: "Years of Excellence"
-    },
-    {
-      icon: BookOpen,
-      number: "100%",
-      label: "Pass Rate"
-    },
-    {
-      icon: Trophy,
-      number: "50+",
-      label: "Academic Awards"
+  const [stats, setStats] = useState<SchoolStat[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('school_stats')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (error) throw error;
+      setStats(data || []);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      // Fallback to default stats if database fails
+      setStats([
+        { id: '1', label: 'Students Enrolled', value: 500, suffix: '+', icon_name: 'Users', display_order: 1, is_active: true },
+        { id: '2', label: 'Years of Excellence', value: 25, suffix: '+', icon_name: 'Award', display_order: 2, is_active: true },
+        { id: '3', label: 'Pass Rate', value: 100, suffix: '%', icon_name: 'BookOpen', display_order: 3, is_active: true },
+        { id: '4', label: 'Academic Awards', value: 50, suffix: '+', icon_name: 'Trophy', display_order: 4, is_active: true }
+      ]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   return (
     <section className="py-16 lg:py-24 bg-gradient-subtle">
@@ -64,22 +84,35 @@ const LegacySection = () => {
 
           {/* Achievements Grid */}
           <div className="grid grid-cols-2 gap-6">
-            {achievements.map((achievement, index) => {
-              const Icon = achievement.icon;
-              return (
-                <Card key={index} className="p-6 text-center shadow-card hover:shadow-elegant transition-smooth bg-card">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-4">
-                    <Icon className="h-6 w-6 text-primary" />
+            {loading ? (
+              // Loading skeleton
+              [...Array(4)].map((_, index) => (
+                <Card key={index} className="p-6 text-center shadow-card bg-card animate-pulse">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-muted rounded-full mb-4">
+                    <div className="w-6 h-6 bg-muted-foreground/20 rounded"></div>
                   </div>
-                  <div className="text-3xl font-bold text-primary mb-2">
-                    {achievement.number}
-                  </div>
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {achievement.label}
-                  </div>
+                  <div className="h-8 bg-muted-foreground/20 rounded mb-2 mx-auto w-20"></div>
+                  <div className="h-4 bg-muted-foreground/20 rounded mx-auto w-24"></div>
                 </Card>
-              );
-            })}
+              ))
+            ) : (
+              stats.map((stat) => {
+                const IconComponent = (icons as any)[stat.icon_name] || icons.Trophy;
+                return (
+                  <Card key={stat.id} className="p-6 text-center shadow-card hover:shadow-elegant transition-smooth bg-card">
+                    <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-4">
+                      <IconComponent className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="text-3xl font-bold text-primary mb-2">
+                      {stat.value}{stat.suffix}
+                    </div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      {stat.label}
+                    </div>
+                  </Card>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

@@ -21,7 +21,8 @@ import {
   Settings,
   GraduationCap,
   Share2,
-  ClipboardList
+  ClipboardList,
+  BarChart3
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -56,6 +57,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { href: '/admin/breaking-news', label: 'Breaking News', icon: Radio },
     { href: '/admin/leadership', label: 'Leadership', icon: Users },
     { href: '/admin/school-features', label: 'School Features', icon: Star },
+    { href: '/admin/school-stats', label: 'School Stats', icon: BarChart3 },
     { href: '/admin/testimonials', label: 'Testimonials', icon: Trophy },
   ];
 

@@ -19,6 +19,7 @@ import ContactsManager from "./pages/admin/Contacts";
 import AboutPageManager from "./pages/admin/AboutPage";
 import LeadershipManager from "./pages/admin/Leadership";
 import SchoolFeaturesManager from "./pages/admin/SchoolFeatures";
+import SchoolStats from "./pages/admin/SchoolStats";
 import TestimonialsManager from "./pages/admin/Testimonials";
 import AdminAcademics from "./pages/admin/Academics";
 import NewsManager from "./pages/admin/NewsManager";
@@ -68,6 +69,7 @@ const App = () => (
                   <Route path="about" element={<AboutPageManager />} />
                   <Route path="leadership" element={<LeadershipManager />} />
                   <Route path="school-features" element={<SchoolFeaturesManager />} />
+                  <Route path="school-stats" element={<SchoolStats />} />
                   <Route path="testimonials" element={<TestimonialsManager />} />
                   <Route path="academics" element={<AdminAcademics />} />
                   <Route path="news" element={<NewsManager />} />
