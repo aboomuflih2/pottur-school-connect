@@ -9,7 +9,7 @@ import { Search, Mail, Phone, Calendar, MessageSquare, Check, Trash2 } from 'luc
 
 interface ContactSubmission {
   id: string;
-  name: string;
+  full_name: string;
   email: string;
   phone: string | null;
   subject: string;
@@ -103,7 +103,7 @@ const ContactsManager = () => {
   };
 
   const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.subject.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -177,7 +177,7 @@ const ContactsManager = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{contact.name}</h3>
+                          <h3 className="font-semibold">{contact.full_name}</h3>
                           {!contact.is_read && (
                             <Badge variant="default" className="text-xs">
                               New
@@ -210,7 +210,7 @@ const ContactsManager = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      {selectedContact.name}
+                      {selectedContact.full_name}
                       {!selectedContact.is_read && (
                         <Badge variant="default">Unread</Badge>
                       )}

@@ -87,26 +87,34 @@ const AboutPageManager = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Update page content
+      // Update page content using upsert
       const contentUpdates = Object.entries(content).map(([page_key, contentText]) => ({
         page_key,
+        page_title: page_key.replace('about_', '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
         content: contentText,
+        meta_description: `${page_key.replace('about_', '').replace('_', ' ')} content for our school`
       }));
 
       for (const update of contentUpdates) {
         const { error } = await supabase
           .from('page_content')
-          .update({ content: update.content })
-          .eq('page_key', update.page_key);
+          .upsert(update, { onConflict: 'page_key' });
 
         if (error) throw error;
       }
 
-      // Update staff counts
+      // Get staff counts ID and update
+      const { data: staffId, error: staffIdError } = await supabase
+        .from('staff_counts')
+        .select('id')
+        .single();
+
+      if (staffIdError) throw staffIdError;
+
       const { error: countsError } = await supabase
         .from('staff_counts')
         .update(staffCounts)
-        .eq('id', (await supabase.from('staff_counts').select('id').single()).data?.id);
+        .eq('id', staffId.id);
 
       if (countsError) throw countsError;
 

@@ -38,7 +38,7 @@ const ContactForm = () => {
         .insert([{
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
+          phone: formData.phone || null,
           subject: formData.subject,
           message: formData.message
         }]);

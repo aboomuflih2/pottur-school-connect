@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Pencil, Trash2, Plus, Upload, Image, GripVertical } from "lucide-react";
 
 interface GalleryPhoto {
@@ -25,6 +26,7 @@ const GalleryManager = () => {
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     image_url: "",
@@ -49,7 +51,17 @@ const GalleryManager = () => {
       return;
     }
 
-    setPhotos(data || []);
+    const normalized = (data ?? []).map((row: any) => ({
+      id: row.id,
+      image_url: row.image_url,
+      title: row.title,
+      description: row.description ?? null,
+      display_order: typeof row.display_order === 'number' ? row.display_order : 0,
+      is_active: (row.is_active ?? row.is_featured ?? true) as boolean,
+      created_at: row.created_at ?? new Date().toISOString(),
+    })) as GalleryPhoto[];
+
+    setPhotos(normalized);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,10 +72,15 @@ const GalleryManager = () => {
       return;
     }
 
+    if (!user?.id) {
+      toast({ title: "You must be logged in to manage gallery", variant: "destructive" });
+      return;
+    }
+
     const photoData = {
       ...formData,
-      display_order: editingPhoto?.display_order ?? photos.length,
-    };
+      display_order: editingPhoto?.display_order ?? photos.length + 1,
+    } as any;
 
     let error;
 
@@ -72,15 +89,41 @@ const GalleryManager = () => {
         .from("gallery_photos")
         .update(photoData)
         .eq("id", editingPhoto.id));
+      // Fallback to legacy schema name is_featured
+      if (error && ((error as any).message || "").toLowerCase().includes("is_active")) {
+        const legacy = { ...photoData } as any;
+        legacy.is_featured = legacy.is_active;
+        delete legacy.is_active;
+        ({ error } = await supabase
+          .from("gallery_photos")
+          .update(legacy)
+          .eq("id", editingPhoto.id));
+      }
     } else {
       ({ error } = await supabase
         .from("gallery_photos")
-        .insert(photoData));
+        .insert(photoData)
+        .select()
+        .single());
+      if (error && ((error as any).message || "").toLowerCase().includes("is_active")) {
+        const legacy = { ...photoData } as any;
+        legacy.is_featured = legacy.is_active;
+        delete legacy.is_active;
+        ({ error } = await supabase
+          .from("gallery_photos")
+          .insert(legacy)
+          .select()
+          .single());
+      }
     }
 
     if (error) {
       console.error("Error saving photo:", error);
-      toast({ title: "Error saving photo", variant: "destructive" });
+      const msg = (error as any)?.message || "";
+      const help = msg.toLowerCase().includes("row level security") || msg.toLowerCase().includes("policy")
+        ? "Check gallery_photos RLS policies and that your user has admin role."
+        : undefined;
+      toast({ title: "Error saving photo", description: help ? `${msg} - ${help}` : msg || undefined, variant: "destructive" });
       return;
     }
 
@@ -109,14 +152,22 @@ const GalleryManager = () => {
   };
 
   const toggleActiveStatus = async (photo: GalleryPhoto) => {
-    const { error } = await supabase
+    let { error } = await supabase
       .from("gallery_photos")
-      .update({ is_active: !photo.is_active })
+      .update({ is_active: !photo.is_active } as any)
       .eq("id", photo.id);
+
+    if (error && ((error as any).message || "").toLowerCase().includes("is_active")) {
+      const retry = await supabase
+        .from("gallery_photos")
+        .update({ is_featured: !photo.is_active } as any)
+        .eq("id", photo.id);
+      error = retry.error;
+    }
 
     if (error) {
       console.error("Error updating photo status:", error);
-      toast({ title: "Error updating photo status", variant: "destructive" });
+      toast({ title: "Error updating photo status", description: (error as any).message, variant: "destructive" });
       return;
     }
 
@@ -195,24 +246,43 @@ const GalleryManager = () => {
     setIsDialogOpen(true);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // In a real implementation, you'd upload to Supabase Storage
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData(prev => ({ 
-          ...prev, 
-          image_url: event.target?.result as string 
-        }));
-      };
-      reader.readAsDataURL(file);
-      
-      // For demo, we'll use placeholder
-      toast({ 
-        title: "File selected", 
-        description: "In production, this would upload to Supabase Storage" 
-      });
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Upload to Supabase Storage: gallery-images bucket
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const filename = `${crypto.randomUUID()}.${ext}`;
+      const filePath = `gallery/${filename}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('gallery-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        console.error('Upload failed:', uploadError);
+        toast({ title: 'Upload failed', description: uploadError.message, variant: 'destructive' });
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from('gallery-images')
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicData.publicUrl;
+      setFormData(prev => ({ ...prev, image_url: publicUrl }));
+      toast({ title: 'File uploaded', description: 'Image uploaded to gallery storage.' });
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      toast({ title: 'Upload error', description: err?.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      // reset input so same file can be re-selected if needed
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 

@@ -10,7 +10,8 @@ import {
   BookOpen,
   Heart,
   Lightbulb,
-  Target
+  Target,
+  type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -51,7 +52,7 @@ const AboutFeatures = () => {
   };
 
   const getIcon = (iconName: string) => {
-    const iconMap: Record<string, any> = {
+    const iconMap: Record<string, LucideIcon> = {
       GraduationCap,
       Building2,
       Users,

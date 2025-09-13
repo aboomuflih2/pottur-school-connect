@@ -5,20 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-school-building.jpg";
 import studentsImage from "@/assets/students-studying.jpg";
 
-interface HeroSlide {
-  id: string;
-  slide_title: string;
-  slide_subtitle: string;
-  background_image: string | null;
-  button_text: string;
-  button_link: string;
-  display_order: number;
-  is_active: boolean;
-}
+import type { Database } from "@/integrations/supabase/types";
+type DBHeroSlide = Database["public"]["Tables"]["hero_slides"]["Row"];
 
 const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [slides, setSlides] = useState<DBHeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,7 +39,9 @@ const HeroSection = () => {
           button_text: "Explore Academics",
           button_link: "/academics",
           display_order: 1,
-          is_active: true
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         },
         {
           id: '2',
@@ -57,7 +51,9 @@ const HeroSection = () => {
           button_text: "Apply Now",
           button_link: "/admissions",
           display_order: 2,
-          is_active: true
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }
       ]);
     } finally {
@@ -65,7 +61,7 @@ const HeroSection = () => {
     }
   };
 
-  const getSlideImage = (slide: HeroSlide, index: number) => {
+  const getSlideImage = (slide: DBHeroSlide, index: number) => {
     if (slide.background_image) {
       return slide.background_image;
     }

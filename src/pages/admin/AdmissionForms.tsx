@@ -34,7 +34,7 @@ export default function AdmissionForms() {
 
       if (error) throw error;
       setForms(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: "Failed to fetch admission forms",
@@ -65,10 +65,11 @@ export default function AdmissionForms() {
         title: "Success",
         description: `${formType === 'kg_std' ? 'KG & STD' : '+1 / HSS'} form ${isActive ? 'activated' : 'deactivated'}`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to update form status";
       toast({
         title: "Error",
-        description: error.message || "Failed to update form status",
+        description: message,
         variant: "destructive"
       });
     } finally {
@@ -96,10 +97,11 @@ export default function AdmissionForms() {
         title: "Success",
         description: "Academic year updated successfully",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to update academic year";
       toast({
         title: "Error",
-        description: error.message || "Failed to update academic year",
+        description: message,
         variant: "destructive"
       });
     } finally {

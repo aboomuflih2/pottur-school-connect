@@ -21,7 +21,18 @@ const Academics = () => {
           .order("display_order");
 
         if (error) throw error;
-        setPrograms(data || []);
+        
+        // Map database columns to frontend interface
+        const mappedPrograms = (data || []).map(program => ({
+          ...program,
+          program_title: program.program_title || program.program_name,
+          short_description: program.short_description || program.program_description,
+          full_description: program.full_description || program.program_description,
+          subjects: program.subjects || [],
+          main_image: program.main_image
+        }));
+        
+        setPrograms(mappedPrograms);
       } catch (error) {
         console.error("Error fetching academic programs:", error);
       } finally {
@@ -33,10 +44,10 @@ const Academics = () => {
   }, []);
 
   const getMoralStudiesProgram = () => 
-    programs.find(p => p.program_title.includes("Moral Studies"));
+    programs.find(p => p.program_title?.includes("Moral Studies"));
 
   const getOtherPrograms = () =>
-    programs.filter(p => !p.program_title.includes("Moral Studies"));
+    programs.filter(p => p.program_title && !p.program_title.includes("Moral Studies"));
 
   if (loading) {
     return (
@@ -127,13 +138,22 @@ const Academics = () => {
                   {/* Image */}
                   <div className={`${index % 2 === 1 ? 'lg:col-start-1' : ''}`}>
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover-scale">
+                      {program.main_image ? (
+                        <img
+                          src={program.main_image}
+                          alt={program.program_title}
+                          className="w-full h-80 object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'block';
+                          }}
+                        />
+                      ) : null}
                       <img
-                        src={program.main_image || "/src/assets/students-studying.jpg"}
+                        src="/src/assets/students-studying.jpg"
                         alt={program.program_title}
-                        className="w-full h-80 object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/src/assets/students-studying.jpg";
-                        }}
+                        className={`w-full h-80 object-cover ${program.main_image ? 'hidden' : 'block'}`}
+                        style={{ display: program.main_image ? 'none' : 'block' }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                     </div>

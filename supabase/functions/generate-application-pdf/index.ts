@@ -66,17 +66,34 @@ serve(async (req) => {
             }
             .letterhead {
               background: #f3f4f6;
-              padding: 18px 24px;
+              padding: 24px;
               border-radius: 10px 10px 0 0;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
+              text-align: center;
+              border-bottom: 3px solid var(--accent);
             }
-            .letterhead-logo { flex-shrink: 0; }
-            .logo { max-width: 140px; height: auto; }
-            .letterhead-content { text-align: right; }
-            .school-name { font-size: 20px; font-weight: 700; color: var(--primary); margin: 0 0 6px 0; }
-            .contact-info { font-size: 12px; color: var(--muted); line-height: 1.5; }
+            .letterhead-logo { 
+              display: flex;
+              justify-content: center;
+              margin-bottom: 16px;
+            }
+            .logo { max-width: 120px; height: auto; }
+            .letterhead-content { 
+              text-align: center;
+            }
+            .school-name { 
+              font-size: 24px; 
+              font-weight: 700; 
+              color: var(--primary); 
+              margin: 0 0 12px 0;
+              letter-spacing: 0.5px;
+            }
+            .contact-info { 
+              font-size: 13px; 
+              color: var(--muted); 
+              line-height: 1.6;
+              max-width: 600px;
+              margin: 0 auto;
+            }
             .accent-line { height: 4px; background: var(--accent); border-radius: 0 0 8px 8px; margin-bottom: 16px; }
 
             .content { position: relative; background: white; padding: 28px; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
@@ -96,7 +113,6 @@ serve(async (req) => {
           </style>
         </head>
           <div class="letterhead">
-            <div class="letterhead-content">
             <div class="letterhead-logo">
               <img src="/lovable-uploads/d526aeda-08eb-46c2-a4d1-d0a41f2fe9de.png" alt="School Logo" class="logo">
             </div>
@@ -109,7 +125,6 @@ serve(async (req) => {
               </div>
             </div>
           </div>
-          <div class="accent-line"></div>
           
           <div class="content">
             <div class="watermark"></div>

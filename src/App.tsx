@@ -22,6 +22,8 @@ import SchoolFeaturesManager from "./pages/admin/SchoolFeatures";
 import SchoolStats from "./pages/admin/SchoolStats";
 import TestimonialsManager from "./pages/admin/Testimonials";
 import AdminAcademics from "./pages/admin/Academics";
+import AcademicProgramNew from "./pages/admin/AcademicProgramNew";
+import AcademicProgramEdit from "./pages/admin/AcademicProgramEdit";
 import NewsManager from "./pages/admin/NewsManager";
 import EventsManager from "./pages/admin/EventsManager";
 import GalleryManager from "./pages/admin/GalleryManager";
@@ -48,6 +50,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
             <Route path="/academics" element={<Academics />} />
+            <Route path="/news-events" element={<NewsEvents />} />
             <Route path="/news" element={<NewsEvents />} />
             <Route path="/auth" element={<Auth />} />
             
@@ -72,6 +75,8 @@ const App = () => (
                   <Route path="school-stats" element={<SchoolStats />} />
                   <Route path="testimonials" element={<TestimonialsManager />} />
                   <Route path="academics" element={<AdminAcademics />} />
+                  <Route path="academics/new" element={<AcademicProgramNew />} />
+                  <Route path="academics/:id/edit" element={<AcademicProgramEdit />} />
                   <Route path="news" element={<NewsManager />} />
                   <Route path="events" element={<EventsManager />} />
                   <Route path="gallery" element={<GalleryManager />} />
@@ -79,7 +84,7 @@ const App = () => (
                   <Route path="admission-forms" element={<AdmissionForms />} />
                   <Route path="admission-applications" element={<AdmissionApplications />} />
                   <Route path="interview-settings" element={<InterviewSettings />} />
-                  <Route path="admissions/application/:type/:id" element={<ApplicationDetail />} />
+                  <Route path="applications/:type/:id" element={<ApplicationDetail />} />
                   <Route index element={<AdminDashboard />} />
                 </Routes>
               </AdminLayout>

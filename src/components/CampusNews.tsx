@@ -12,8 +12,7 @@ interface NewsPost {
   excerpt: string;
   featured_image: string | null;
   publication_date: string;
-  author: string;
-  slug: string;
+  slug?: string;
 }
 
 const CampusNews = () => {
@@ -29,7 +28,7 @@ const CampusNews = () => {
 
       const { data, error: fetchError } = await supabase
         .from('news_posts')
-        .select('id, title, excerpt, featured_image, publication_date, author, slug')
+        .select('id, title, excerpt, featured_image, publication_date')
         .eq('is_published', true)
         .order('publication_date', { ascending: false })
         .limit(3);
@@ -62,7 +61,9 @@ const CampusNews = () => {
     });
   };
 
-  const handleReadMore = (slug: string) => {
+  const handleReadMore = (news: NewsPost) => {
+    // Generate slug from title if not available
+    const slug = news.slug || news.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || news.id;
     navigate(`/news-events#${slug}`);
   };
 
@@ -158,7 +159,7 @@ const CampusNews = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <User className="h-3 w-3" />
-                        <span>{news.author}</span>
+                        <span>Admin</span>
                       </div>
                     </div>
 
@@ -178,7 +179,7 @@ const CampusNews = () => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => handleReadMore(news.slug)}
+                      onClick={() => handleReadMore(news)}
                       className="text-primary hover:text-primary-light p-0 h-auto font-medium group/btn"
                     >
                       Read More

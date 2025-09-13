@@ -3,7 +3,9 @@ import { Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const BreakingNews = () => {
-  const [newsText, setNewsText] = useState("🎓 Admissions Open for Academic Year 2024-25 | Online Application Available | Contact: 0494-2699645 | Visit our campus for more details");
+  const [newsText, setNewsText] = useState(
+    "Admissions Open for Academic Year 2024-25 | Online Application Available | Contact: 0494-2699645 | Visit our campus for more details"
+  );
 
   useEffect(() => {
     loadBreakingNews();
@@ -12,19 +14,23 @@ const BreakingNews = () => {
   const loadBreakingNews = async () => {
     try {
       const { data, error } = await supabase
-        .from('breaking_news')
-        .select('message')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
+        .from("breaking_news")
+        .select("message, is_active")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
         .limit(1);
 
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setNewsText(data[0].message);
+      if (error) {
+        console.error("Error fetching breaking news:", error);
+        return;
+      }
+
+      if (data && data.length > 0 && (data[0] as any).message) {
+        // Cast because supabase-js types are not wired here
+        setNewsText((data[0] as any).message as string);
       }
     } catch (error) {
-      console.error('Error loading breaking news:', error);
+      console.error("Error loading breaking news:", error);
       // Keep default message on error
     }
   };
@@ -42,9 +48,7 @@ const BreakingNews = () => {
           {/* Scrolling Text Container */}
           <div className="flex-1 overflow-hidden">
             <div className="scroll-text whitespace-nowrap">
-              <span className="font-medium text-sm md:text-base">
-                {newsText}
-              </span>
+              <span className="font-medium text-sm md:text-base">{newsText}</span>
             </div>
           </div>
         </div>
@@ -54,3 +58,4 @@ const BreakingNews = () => {
 };
 
 export default BreakingNews;
+

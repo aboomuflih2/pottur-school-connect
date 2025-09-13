@@ -63,9 +63,12 @@ serve(async (req) => {
     }
 
     // Fetch interview subjects and marks (no FK join available) and templates separately
+    type SubjectMarkRow = { subject_name: string; marks: number | null };
+    type TemplateRow = { subject_name: string; max_marks: number; display_order: number };
+
     const { data: subjectMarks, error: subjectsError } = await supabase
       .from('interview_subjects')
-      .select('*')
+      .select('subject_name, marks')
       .eq('application_id', application.id)
       .eq('application_type', applicationType);
 
@@ -77,7 +80,7 @@ serve(async (req) => {
     // Fetch templates for this form type to provide structure and max marks
     const { data: templates, error: templatesError } = await supabase
       .from('interview_subject_templates')
-      .select('*')
+      .select('subject_name, max_marks, display_order')
       .eq('form_type', applicationType)
       .eq('is_active', true)
       .order('display_order');
@@ -87,25 +90,24 @@ serve(async (req) => {
     }
 
     // Build subjects array using templates order; merge marks by subject_name
-    let subjectsWithTemplate: Array<{ subject_name: string; marks: number | null; template: { max_marks: number; display_order: number } }>
-      = [];
+    let subjectsWithTemplate: Array<{ subject_name: string; marks: number | null; template: { max_marks: number; display_order: number } }> = [];
 
     if (templates && templates.length > 0) {
-      const marksByName = (subjectMarks || []).reduce<Record<string, number | null>>((acc, s) => {
-        acc[(s as any).subject_name] = (s as any).marks ?? null;
+      const marksByName = (subjectMarks as SubjectMarkRow[] | null || []).reduce<Record<string, number | null>>((acc, s) => {
+        acc[s.subject_name] = s.marks ?? null;
         return acc;
       }, {});
 
-      subjectsWithTemplate = templates.map((t) => ({
-        subject_name: (t as any).subject_name,
-        marks: marksByName[(t as any).subject_name] ?? null,
-        template: { max_marks: (t as any).max_marks, display_order: (t as any).display_order }
+      subjectsWithTemplate = (templates as TemplateRow[]).map((t) => ({
+        subject_name: t.subject_name,
+        marks: marksByName[t.subject_name] ?? null,
+        template: { max_marks: t.max_marks, display_order: t.display_order }
       }));
     } else if (subjectMarks && subjectMarks.length > 0) {
       // Fallback: we have marks but no templates; assume max 25 each and keep original order
-      subjectsWithTemplate = subjectMarks.map((s, idx) => ({
-        subject_name: (s as any).subject_name,
-        marks: (s as any).marks ?? null,
+      subjectsWithTemplate = (subjectMarks as SubjectMarkRow[]).map((s, idx) => ({
+        subject_name: s.subject_name,
+        marks: s.marks ?? null,
         template: { max_marks: 25, display_order: idx + 1 }
       }));
     } else {

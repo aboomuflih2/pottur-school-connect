@@ -12,14 +12,15 @@ import { Plus, Edit, Trash2, Eye, EyeOff, GripVertical, Upload, X } from 'lucide
 
 interface HeroSlide {
   id: string;
-  slide_title: string;
-  slide_subtitle: string;
-  background_image: string | null;
+  title: string;
+  subtitle: string;
+  image_url: string | null;
   button_text: string;
-  button_link: string;
-  display_order: number;
+  button_url: string;
+  order_index: number;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 const HeroSlidesManager = () => {
@@ -47,16 +48,23 @@ const HeroSlidesManager = () => {
   }, []);
 
   const loadSlides = async () => {
+    console.log('📥 Loading slides from database...');
     try {
       const { data, error } = await supabase
         .from('hero_slides')
         .select('*')
-        .order('display_order');
+        .order('order_index');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error loading slides:', error);
+        throw error;
+      }
+      
+      console.log('✅ Slides loaded successfully:', data);
+      console.log('📊 Number of slides:', data?.length || 0);
       setSlides(data || []);
     } catch (error) {
-      console.error('Error loading slides:', error);
+      console.error('💥 Error loading slides:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -102,39 +110,87 @@ const HeroSlidesManager = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🚀 Form submission started');
+    console.log('📝 Form data:', formData);
+    console.log('🖼️ Uploaded image:', uploadedImage);
+    console.log('✏️ Editing slide:', editingSlide);
+    
     try {
       let slideData = { ...formData };
+      console.log('📋 Initial slide data:', slideData);
 
       if (uploadedImage) {
+        console.log('📤 Uploading image...');
         const imageUrl = await uploadImage();
+        console.log('🔗 Image URL received:', imageUrl);
         if (imageUrl) {
           slideData = { ...slideData, background_image: imageUrl };
+          console.log('✅ Image URL added to slide data');
+        } else {
+          console.log('❌ Image upload failed, continuing without image');
         }
       } else if (editingSlide && !uploadedImage && !imagePreview) {
         // If editing and no new image and no preview, clear the background_image
         slideData = { ...slideData, background_image: null };
+        console.log('🗑️ Cleared background image for edit');
       }
 
-      if (editingSlide) {
-        // Update existing slide
-        const { error } = await supabase
-          .from('hero_slides')
-          .update(slideData)
-          .eq('id', editingSlide.id);
+      // Map new column names to old column names for database compatibility
+      const dbData = {
+        title: slideData.slide_title,
+        subtitle: slideData.slide_subtitle,
+        image_url: slideData.background_image,
+        button_text: slideData.button_text,
+        button_url: slideData.button_link,
+        order_index: slideData.display_order,
+        is_active: slideData.is_active
+      };
+      
+      console.log('💾 Database data to be saved:', dbData);
 
-        if (error) throw error;
+      if (editingSlide) {
+        console.log('✏️ Updating existing slide with ID:', editingSlide.id);
+        // Update existing slide
+        const { data, error } = await supabase
+          .from('hero_slides')
+          .update(dbData)
+          .eq('id', editingSlide.id)
+          .select();
+
+        if (error) {
+          console.error('❌ Update error:', error);
+          throw error;
+        }
+        
+        console.log('✅ Update successful, returned data:', data);
 
         toast({
           title: 'Success',
           description: 'Hero slide updated successfully',
         });
       } else {
+        console.log('➕ Creating new slide...');
         // Create new slide
-        const { error } = await supabase
+        console.log('🔄 Attempting database insert with data:', dbData);
+        console.log('🔑 Using Supabase client with URL:', supabase.supabaseUrl);
+        const { data, error } = await supabase
           .from('hero_slides')
-          .insert([slideData]);
-
-        if (error) throw error;
+          .insert([dbData])
+          .select();
+        console.log('📊 Insert result - data:', data, 'error:', error);
+        
+        if (error) {
+          console.error('❌ Database insert failed:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          console.error('❌ Insert error:', error);
+          throw error;
+        }
+        
+        console.log('✅ Insert successful, returned data:', data);
 
         toast({
           title: 'Success',
@@ -142,12 +198,16 @@ const HeroSlidesManager = () => {
         });
       }
 
+      console.log('🔄 Refreshing form and reloading slides...');
       setShowForm(false);
       setEditingSlide(null);
       resetForm();
-      loadSlides();
+      
+      console.log('📥 Calling loadSlides()...');
+      await loadSlides();
+      console.log('✅ Form submission completed successfully');
     } catch (error) {
-      console.error('Error saving slide:', error);
+      console.error('💥 Error saving slide:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -188,15 +248,15 @@ const HeroSlidesManager = () => {
   const handleEdit = (slide: HeroSlide) => {
     setEditingSlide(slide);
     setFormData({
-      slide_title: slide.slide_title,
-      slide_subtitle: slide.slide_subtitle,
+      slide_title: slide.title,
+      slide_subtitle: slide.subtitle,
       button_text: slide.button_text,
-      button_link: slide.button_link,
-      display_order: slide.display_order,
+      button_link: slide.button_url,
+      display_order: slide.order_index,
       is_active: slide.is_active,
-      background_image: slide.background_image,
+      background_image: slide.image_url,
     });
-    setImagePreview(slide.background_image);
+    setImagePreview(slide.image_url);
     setUploadedImage(null);
     setShowForm(true);
   };

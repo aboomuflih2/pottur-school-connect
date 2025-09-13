@@ -69,6 +69,11 @@ const AboutLeadership = () => {
     );
   }
 
+  // Show all active records from database, even if they have empty content
+  // This allows admin users to see placeholder cards for positions that need to be filled
+  const validLeaders = leaders;
+
+  // Only hide the section if there are no records at all
   if (leaders.length === 0) {
     return null;
   }
@@ -86,28 +91,42 @@ const AboutLeadership = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {leaders.map((leader) => (
-            <Card key={leader.id} className="p-6 shadow-card hover:shadow-elegant transition-smooth bg-card">
-              <div className="text-center mb-6">
-                <Avatar className="w-20 h-20 mx-auto mb-4">
-                  <AvatarImage src={leader.photo_url} alt={leader.person_name} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                    {getInitials(leader.person_name)}
-                  </AvatarFallback>
-                </Avatar>
-                <h3 className="text-xl font-heading font-bold text-primary mb-1">
-                  {leader.person_name}
-                </h3>
-                <p className="text-sm font-medium text-muted-foreground">
-                  {leader.person_title}
-                </p>
-              </div>
-              
-              <blockquote className="text-foreground/80 leading-relaxed text-center italic">
-                "{leader.message_content}"
-              </blockquote>
-            </Card>
-          ))}
+          {validLeaders.map((leader) => {
+            const hasContent = leader.person_name?.trim() || leader.person_title?.trim() || leader.message_content?.trim();
+            
+            if (!hasContent) {
+              return (
+                <Card key={leader.id} className="p-6 shadow-card bg-card border-dashed border-2 border-muted">
+                  <div className="text-center text-muted-foreground">
+                    <p className="text-sm">Leadership message coming soon...</p>
+                  </div>
+                </Card>
+              );
+            }
+            
+            return (
+              <Card key={leader.id} className="p-6 shadow-card hover:shadow-elegant transition-smooth bg-card">
+                <div className="text-center mb-6">
+                  <Avatar className="w-20 h-20 mx-auto mb-4">
+                    <AvatarImage src={leader.photo_url} alt={leader.person_name || 'Leadership'} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                      {leader.person_name ? getInitials(leader.person_name) : '??'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h3 className="text-xl font-heading font-bold text-primary mb-1">
+                    {leader.person_name || 'Name TBD'}
+                  </h3>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {leader.person_title || 'Title TBD'}
+                  </p>
+                </div>
+                
+                <blockquote className="text-foreground/80 leading-relaxed text-center italic">
+                  "{leader.message_content || 'Message coming soon...'}"
+                </blockquote>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>

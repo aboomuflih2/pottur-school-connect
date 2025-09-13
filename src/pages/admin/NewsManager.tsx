@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Pencil, Trash2, Plus, Eye, MessageCircle, Heart, FileText } from "lucide-react";
 import { format } from "date-fns";
 
@@ -17,7 +19,7 @@ interface NewsPost {
   excerpt: string;
   featured_image: string | null;
   publication_date: string;
-  author: string;
+  author_id: string;
   is_published: boolean;
   like_count: number;
 }
@@ -40,13 +42,13 @@ const NewsManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'articles' | 'comments'>('articles');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     title: "",
     content: "",
     excerpt: "",
     featured_image: "",
-    author: "",
     is_published: false,
   });
 
@@ -71,11 +73,15 @@ const NewsManager = () => {
   };
 
   const fetchComments = async () => {
+    type CommentJoinRow = Database["public"]["Tables"]["article_comments"]["Row"] & {
+      news_posts?: { title: string } | null;
+    };
+
     const { data, error } = await supabase
       .from("article_comments")
       .select(`
         *,
-        news_posts!inner(title)
+        news_posts(title)
       `)
       .order("created_at", { ascending: false });
 
@@ -84,10 +90,17 @@ const NewsManager = () => {
       return;
     }
 
-    const commentsWithTitles = data?.map(comment => ({
-      ...comment,
-      article_title: (comment as any).news_posts?.title
-    })) || [];
+    const typed = (data ?? []) as CommentJoinRow[];
+    const commentsWithTitles: Comment[] = typed.map((row: any) => ({
+      id: row.id,
+      author_name: row.author_name,
+      author_email: row.author_email,
+      comment_text: row.comment_text ?? row.comment_content,
+      is_approved: row.is_approved,
+      created_at: row.created_at,
+      article_id: row.article_id,
+      article_title: row.news_posts?.title,
+    }));
 
     setComments(commentsWithTitles);
   };
@@ -95,13 +108,26 @@ const NewsManager = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.content || !formData.excerpt || !formData.author) {
+    if (!formData.title || !formData.content || !formData.excerpt) {
       toast({ title: "Please fill in all required fields", variant: "destructive" });
       return;
     }
 
+    if (!user?.id) {
+      toast({ title: "You must be logged in to create articles", variant: "destructive" });
+      return;
+    }
+
     const articleData = {
-      ...formData,
+      title: formData.title,
+      content: formData.content,
+      excerpt: formData.excerpt,
+      featured_image: formData.featured_image || null,
+      author_id: user.id,
+      category: null, // Optional field
+      tags: [], // Optional field
+      is_published: formData.is_published,
+      publication_date: formData.is_published ? new Date().toISOString() : null,
       slug: formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
     };
 
@@ -204,7 +230,6 @@ const NewsManager = () => {
       content: "",
       excerpt: "",
       featured_image: "",
-      author: "",
       is_published: false,
     });
     setEditingArticle(null);
@@ -218,7 +243,6 @@ const NewsManager = () => {
         content: article.content,
         excerpt: article.excerpt,
         featured_image: article.featured_image || "",
-        author: article.author,
         is_published: article.is_published,
       });
     } else {
@@ -278,16 +302,6 @@ const NewsManager = () => {
                       value={formData.title}
                       onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="Article title"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Author *</label>
-                    <Input
-                      value={formData.author}
-                      onChange={(e) => setFormData(prev => ({ ...prev, author: e.target.value }))}
-                      placeholder="Author name"
                       required
                     />
                   </div>
@@ -362,7 +376,7 @@ const NewsManager = () => {
                         </Badge>
                       </CardTitle>
                       <div className="text-sm text-muted-foreground">
-                        By {article.author} • {format(new Date(article.publication_date), "MMM dd, yyyy")}
+                        By {article.author_id} • {format(new Date(article.publication_date), "MMM dd, yyyy")}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -516,3 +530,4 @@ const NewsManager = () => {
 };
 
 export default NewsManager;
+

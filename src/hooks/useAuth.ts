@@ -66,16 +66,31 @@ export function useAuth() {
   };
 
   const checkAdminRole = async (userId: string): Promise<boolean> => {
+    console.log('🔍 checkAdminRole called with userId:', userId);
     try {
+      // Check if we have a valid session first
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('📋 Current session:', { session: session?.user?.email, sessionError });
+      
+      if (!session) {
+        console.log('❌ No active session for admin check');
+        return false;
+      }
+      
+      console.log('🔍 Making user_roles query...');
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .eq('role', 'admin')
-        .single();
+        .limit(1);
       
-      return !error && !!data;
-    } catch {
+      console.log('📊 checkAdminRole result:', { data, error });
+      const isAdmin = !error && data && data.length > 0;
+      console.log('✅ Final admin status:', isAdmin);
+      return isAdmin;
+    } catch (err) {
+      console.error('❌ checkAdminRole error:', err);
       return false;
     }
   };

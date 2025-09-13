@@ -31,6 +31,7 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
+  console.log('🏗️ AdminLayout rendering with children:', children);
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const [pageManagementOpen, setPageManagementOpen] = useState(true);

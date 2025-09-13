@@ -34,6 +34,7 @@ const AcademicPrograms = () => {
           .order("display_order");
 
         if (error) throw error;
+        
         setPrograms(data || []);
       } catch (error) {
         console.error("Error fetching academic programs:", error);
@@ -81,28 +82,47 @@ const AcademicPrograms = () => {
             return (
               <div
                 key={program.id}
-                className="bg-card rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border hover:border-primary/20 group cursor-pointer"
+                className="bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border hover:border-primary/20 group cursor-pointer"
                 onClick={() => setSelectedProgram(program)}
               >
-                <div className="flex items-center justify-center w-16 h-16 bg-primary/10 rounded-lg mb-4 group-hover:bg-primary/20 transition-colors">
-                  <IconComponent className="w-8 h-8 text-primary" />
+                {/* Program Image */}
+                <div className="relative h-48 overflow-hidden">
+                  {program.main_image ? (
+                    <img
+                      src={program.main_image}
+                      alt={program.program_title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className={`${program.main_image ? 'hidden' : 'flex'} absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 items-center justify-center`}>
+                    <IconComponent className="w-16 h-16 text-primary" />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
-                <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
-                  {program.program_title}
-                </h3>
-                <p className="text-muted-foreground mb-4 line-clamp-3">
-                  {program.short_description}
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedProgram(program);
-                  }}
-                >
-                  Learn More
-                </Button>
+                
+                {/* Card Content */}
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
+                    {program.program_title}
+                  </h3>
+                  <p className="text-muted-foreground mb-4 line-clamp-3">
+                    {program.short_description}
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProgram(program);
+                    }}
+                  >
+                    Learn More
+                  </Button>
+                </div>
               </div>
             );
           })}
@@ -125,6 +145,21 @@ const AcademicPrograms = () => {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-6">
+              {/* Program Image */}
+              {selectedProgram?.main_image && (
+                <div className="relative h-64 rounded-lg overflow-hidden">
+                  <img
+                    src={selectedProgram.main_image}
+                    alt={selectedProgram.program_title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+              )}
+              
               <div className="flex items-center space-x-4">
                 <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg">
                   {selectedProgram && (

@@ -28,8 +28,8 @@ interface Event {
   id: string;
   title: string;
   description: string;
-  date_time: string;
-  event_type: string;
+  event_date: string;
+  location: string;
 }
 
 interface GalleryPhoto {
@@ -64,6 +64,41 @@ const NewsEvents = () => {
     fetchGalleryPhotos();
   }, []);
 
+  // Generate a stable anonymous client ID for likes
+  const getClientId = () => {
+    try {
+      const key = "psc_client_id";
+      let id = localStorage.getItem(key);
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem(key, id);
+      }
+      return id;
+    } catch {
+      // Fallback if localStorage/crypto unavailable
+      return "anon-client";
+    }
+  };
+
+  // When opening an article, determine if current client already liked it
+  useEffect(() => {
+    const checkLiked = async () => {
+      if (!selectedArticle) return;
+      try {
+        const clientId = getClientId();
+        const { count, error } = await supabase
+          .from("article_likes")
+          .select("id", { count: "exact", head: true })
+          .eq("article_id", selectedArticle.id)
+          .eq("user_ip", clientId);
+        if (!error) setIsLiked((count ?? 0) > 0);
+      } catch {
+        // ignore check failures
+      }
+    };
+    checkLiked();
+  }, [selectedArticle]);
+
   const fetchNewsArticles = async () => {
     const { data, error } = await supabase
       .from("news_posts")
@@ -83,8 +118,8 @@ const NewsEvents = () => {
     const { data, error } = await supabase
       .from("events")
       .select("*")
-      .eq("is_active", true)
-      .order("date_time", { ascending: true });
+      .eq("is_published", true)
+      .order("event_date", { ascending: true });
 
     if (error) {
       console.error("Error fetching events:", error);
@@ -98,7 +133,7 @@ const NewsEvents = () => {
     const { data, error } = await supabase
       .from("gallery_photos")
       .select("*")
-      .eq("is_active", true)
+
       .order("display_order", { ascending: true });
 
     if (error) {
@@ -122,31 +157,57 @@ const NewsEvents = () => {
       return;
     }
 
-    setComments(data || []);
+    const normalized = (data ?? []).map((row: any) => ({
+      id: row.id,
+      author_name: row.author_name,
+      comment_text: row.comment_text ?? row.comment_content,
+      created_at: row.created_at,
+    })) as Comment[];
+
+    setComments(normalized);
+  };
+
+  const refreshLikeCount = async (articleId: string) => {
+    try {
+      const { count, error } = await supabase
+        .from("article_likes")
+        .select("id", { count: "exact", head: true })
+        .eq("article_id", articleId);
+      if (error) return;
+      const likeCount = count ?? 0;
+      setNewsArticles(prev => prev.map(a => a.id === articleId ? { ...a, like_count: likeCount } : a));
+      if (selectedArticle && selectedArticle.id === articleId) {
+        setSelectedArticle(prev => (prev ? { ...prev, like_count: likeCount } : null));
+      }
+    } catch {
+      // ignore
+    }
   };
 
   const handleLike = async (articleId: string) => {
     if (isLiked) return;
-
-    const userIP = "user-ip"; // In production, get actual IP
+    const clientId = getClientId();
     const { error } = await supabase
       .from("article_likes")
-      .insert({ article_id: articleId, user_ip: userIP });
+      .insert({ article_id: articleId, user_ip: clientId });
 
     if (!error) {
       setIsLiked(true);
-      // Update like count in state
-      setNewsArticles(prev => 
-        prev.map(article => 
-          article.id === articleId 
-            ? { ...article, like_count: article.like_count + 1 }
-            : article
-        )
-      );
-      if (selectedArticle && selectedArticle.id === articleId) {
-        setSelectedArticle(prev => prev ? { ...prev, like_count: prev.like_count + 1 } : null);
-      }
+      await refreshLikeCount(articleId);
       toast({ title: "Thanks for liking this article!" });
+      return;
+    }
+
+    // Handle duplicate like or RLS errors gracefully
+    const msg = (error as any)?.message || "";
+    if (msg.includes("unique") || msg.includes("duplicate") || msg.includes("23505")) {
+      setIsLiked(true);
+      await refreshLikeCount(articleId);
+      toast({ title: "You already liked this article." });
+    } else if (msg.toLowerCase().includes("row-level security") || msg.toLowerCase().includes("permission")) {
+      toast({ title: "Unable to like right now", description: "Please sign in and try again.", variant: "destructive" });
+    } else {
+      toast({ title: "Unable to like right now", description: msg || "Please try again later.", variant: "destructive" });
     }
   };
 
@@ -156,18 +217,40 @@ const NewsEvents = () => {
       return;
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from("article_comments")
       .insert({
         article_id: selectedArticle.id,
         author_name: newComment.name,
         author_email: newComment.email,
-        comment_text: newComment.text
-      });
+        comment_text: newComment.text,
+      } as any);
+
+    // Fallback for older schema where column was 'comment_content'
+    if (error && ((error as any).message || "").includes("comment_text")) {
+      const retry = await supabase
+        .from("article_comments")
+        .insert({
+          article_id: selectedArticle.id,
+          author_name: newComment.name,
+          author_email: newComment.email,
+          comment_content: newComment.text,
+        } as any);
+      error = retry.error;
+    }
 
     if (!error) {
       setNewComment({ name: "", email: "", text: "" });
       toast({ title: "Comment submitted for approval!" });
+      // Refresh comments list to show newly added once approved (optional immediate refresh)
+      fetchComments(selectedArticle.id);
+    } else {
+      const msg = (error as any)?.message || "";
+      if (msg.toLowerCase().includes("row-level security") || msg.toLowerCase().includes("permission")) {
+        toast({ title: "Unable to submit comment", description: "Please sign in and try again.", variant: "destructive" });
+      } else {
+        toast({ title: "Unable to submit comment", description: msg || "Please try again later.", variant: "destructive" });
+      }
     }
   };
 
@@ -189,8 +272,8 @@ const NewsEvents = () => {
     fetchComments(article.id);
   };
 
-  const upcomingEvents = events.filter(event => isAfter(new Date(event.date_time), new Date()));
-  const pastEvents = events.filter(event => !isAfter(new Date(event.date_time), new Date()));
+  const upcomingEvents = events.filter(event => isAfter(new Date(event.event_date), new Date()));
+  const pastEvents = events.filter(event => !isAfter(new Date(event.event_date), new Date()));
 
   const nextPhoto = () => {
     setCurrentPhotoIndex((prev) => (prev + 1) % galleryPhotos.length);
@@ -272,21 +355,21 @@ const NewsEvents = () => {
                       <div className="flex items-start gap-4">
                         <div className="bg-primary text-primary-foreground p-3 rounded-lg text-center min-w-[80px]">
                           <div className="text-lg font-bold">
-                            {format(new Date(event.date_time), "dd")}
+                            {format(new Date(event.event_date), "dd")}
                           </div>
                           <div className="text-sm">
-                            {format(new Date(event.date_time), "MMM")}
+                            {format(new Date(event.event_date), "MMM")}
                           </div>
                         </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-lg mb-2">{event.title}</h3>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                             <Clock className="w-4 h-4" />
-                            {format(new Date(event.date_time), "h:mm a")}
+                            {format(new Date(event.event_date), "h:mm a")}
                           </div>
                           <p className="text-muted-foreground">{event.description}</p>
                           <Badge variant="secondary" className="mt-2">
-                            {event.event_type}
+                            {event.location}
                           </Badge>
                         </div>
                       </div>
@@ -308,17 +391,17 @@ const NewsEvents = () => {
                       <div className="flex items-start gap-4">
                         <div className="bg-muted text-muted-foreground p-3 rounded-lg text-center min-w-[80px]">
                           <div className="text-lg font-bold">
-                            {format(new Date(event.date_time), "dd")}
+                            {format(new Date(event.event_date), "dd")}
                           </div>
                           <div className="text-sm">
-                            {format(new Date(event.date_time), "MMM")}
+                            {format(new Date(event.event_date), "MMM")}
                           </div>
                         </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-lg mb-2">{event.title}</h3>
                           <p className="text-muted-foreground">{event.description}</p>
                           <Badge variant="outline" className="mt-2">
-                            {event.event_type}
+                            {event.location}
                           </Badge>
                         </div>
                       </div>
@@ -502,3 +585,4 @@ const NewsEvents = () => {
 };
 
 export default NewsEvents;
+

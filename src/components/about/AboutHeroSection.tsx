@@ -5,8 +5,11 @@ import heroSchoolBuilding from "@/assets/hero-school-building.jpg";
 import studentsStudying from "@/assets/students-studying.jpg";
 
 interface HeroSlide {
-  id: string;
-  background_image: string;
+  id: number;
+  title: string;
+  subtitle: string;
+  image_url: string;
+  order_index: number;
 }
 
 const AboutHeroSection = () => {
@@ -22,27 +25,71 @@ const AboutHeroSection = () => {
     try {
       const { data, error } = await supabase
         .from('hero_slides')
-        .select('id, background_image')
+        .select('id, title, subtitle, image_url, order_index')
         .eq('is_active', true)
-        .order('display_order');
+        .order('order_index');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading slides:', error);
+        // Use fallback slides if database query fails
+        setSlides([
+          {
+            id: 1,
+            title: "Welcome to Our School",
+            subtitle: "Excellence in Education",
+            image_url: "/api/placeholder/1200/600",
+            order_index: 1
+          },
+          {
+            id: 2,
+            title: "Building Future Leaders",
+            subtitle: "Empowering Students for Success",
+            image_url: "/api/placeholder/1200/600",
+            order_index: 2
+          }
+        ]);
+        return;
+      }
 
       if (data && data.length > 0) {
         setSlides(data);
       } else {
         // Fallback slides with default images
         setSlides([
-          { id: '1', background_image: heroSchoolBuilding },
-          { id: '2', background_image: studentsStudying }
+          {
+            id: 1,
+            title: "Welcome to Our School",
+            subtitle: "Excellence in Education",
+            image_url: "/api/placeholder/1200/600",
+            order_index: 1
+          },
+          {
+            id: 2,
+            title: "Building Future Leaders",
+            subtitle: "Empowering Students for Success",
+            image_url: "/api/placeholder/1200/600",
+            order_index: 2
+          }
         ]);
       }
     } catch (error) {
       console.error('Error loading slides:', error);
       // Use fallback slides
       setSlides([
-        { id: '1', background_image: heroSchoolBuilding },
-        { id: '2', background_image: studentsStudying }
+        {
+          id: 1,
+          title: "Welcome to Our School",
+          subtitle: "Excellence in Education",
+          image_url: "/api/placeholder/1200/600",
+          order_index: 1
+        },
+        {
+          id: 2,
+          title: "Building Future Leaders",
+          subtitle: "Empowering Students for Success",
+          image_url: "/api/placeholder/1200/600",
+          order_index: 2
+        }
       ]);
     } finally {
       setLoading(false);
@@ -50,10 +97,10 @@ const AboutHeroSection = () => {
   };
 
   const getSlideImage = (slide: HeroSlide) => {
-    if (slide.background_image && slide.background_image.startsWith('http')) {
-      return slide.background_image;
+    if (slide.image_url && slide.image_url.startsWith('http')) {
+      return slide.image_url;
     }
-    return slide.id === '1' ? heroSchoolBuilding : studentsStudying;
+    return slide.id === 1 ? heroSchoolBuilding : studentsStudying;
   };
 
   const nextSlide = () => {
@@ -66,10 +113,12 @@ const AboutHeroSection = () => {
 
   useEffect(() => {
     if (slides.length > 1) {
-      const interval = setInterval(nextSlide, 5000);
+      const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }, 5000);
       return () => clearInterval(interval);
     }
-  }, [slides]);
+  }, [slides.length]);
 
   if (loading) {
     return (

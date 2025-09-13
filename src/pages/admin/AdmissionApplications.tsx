@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 interface Application {
   id: string;
   application_number: string;
-  full_name: string;
+  full_name?: string; // For both kg_std and plus_one applications
   mobile_number: string;
   status: string;
   created_at: string;
@@ -79,7 +79,7 @@ export default function AdmissionApplications() {
       // Fetch KG STD applications
       const { data: kgStdData, error: kgStdError } = await supabase
         .from('kg_std_applications')
-        .select('id, application_number, full_name, mobile_number, status, created_at, stage')
+        .select('id, application_number, full_name, mobile_number, status, created_at')
         .order('created_at', { ascending: false });
 
       if (kgStdError) throw kgStdError;
@@ -105,7 +105,7 @@ export default function AdmissionApplications() {
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setApplications(combinedApplications);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: "Failed to fetch applications",
@@ -121,11 +121,11 @@ export default function AdmissionApplications() {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(app => 
-        app.application_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.mobile_number.includes(searchTerm)
-      );
+      filtered = filtered.filter(app => {
+        return app.application_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               (app.full_name && app.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+               app.mobile_number.includes(searchTerm);
+      });
     }
 
     // Status filter
@@ -142,7 +142,7 @@ export default function AdmissionApplications() {
   };
 
   const viewApplication = (application: Application) => {
-    navigate(`/admin/admissions/application/${application.type}/${application.id}`);
+    navigate(`/admin/applications/${application.type}/${application.id}`);
   };
 
   const toggleApplicationSelection = (applicationId: string) => {
@@ -223,7 +223,7 @@ export default function AdmissionApplications() {
       
       // Refresh applications
       fetchApplications();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: "Failed to schedule interviews",
@@ -459,7 +459,9 @@ export default function AdmissionApplications() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{application.full_name}</p>
+                        <p className="font-medium">
+                          {application.full_name}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {application.mobile_number}
                         </p>
@@ -471,7 +473,7 @@ export default function AdmissionApplications() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {application.stage || application.stream || "-"}
+                      {application.type === 'kg_std' ? '-' : application.stream || '-'}
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(application.status)}>

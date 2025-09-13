@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Save, Upload, Loader2, Camera } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -73,6 +73,9 @@ const LeadershipManager = () => {
         .eq('position', leader.position);
 
       if (error) throw error;
+
+      // Refresh data from database to ensure consistency
+      await loadLeadership();
 
       toast({
         title: "Success",

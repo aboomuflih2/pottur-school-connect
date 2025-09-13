@@ -46,10 +46,32 @@ export function KGStdApplicationForm() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      fullName: "",
+      gender: undefined,
+      dateOfBirth: "",
+      stage: "",
       needMadrassa: false,
+      previousMadrassa: "",
+      fatherName: "",
+      motherName: "",
+      houseName: "",
+      postOffice: "",
+      village: "",
+      pincode: "",
+      district: "",
+      email: "",
+      mobileNumber: "",
+      previousSchool: "",
       hasSiblings: false,
+      siblingsNames: "",
     }
   });
+
+  // Ensure no native form submission refreshes the page
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    form.handleSubmit(onSubmit)(e);
+  };
 
   const watchedStage = form.watch("stage");
   const watchedNeedMadrassa = form.watch("needMadrassa");
@@ -68,39 +90,81 @@ export function KGStdApplicationForm() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      const applicationNumber = generateApplicationNumber();
-      
-      const { error } = await supabase
-        .from('kg_std_applications')
-        .insert([{
-          application_number: applicationNumber,
-          full_name: data.fullName,
-          gender: data.gender,
-          date_of_birth: data.dateOfBirth,
-          stage: data.stage,
-          need_madrassa: data.needMadrassa,
-          previous_madrassa: data.previousMadrassa || null,
-          father_name: data.fatherName,
-          mother_name: data.motherName,
-          house_name: data.houseName,
-          post_office: data.postOffice,
-          village: data.village,
-          pincode: data.pincode,
-          district: data.district,
-          email: data.email || null,
-          mobile_number: data.mobileNumber,
-          previous_school: data.previousSchool || null,
-          has_siblings: data.hasSiblings,
-          siblings_names: data.siblingsNames || null,
-        }]);
-
-      if (error) throw error;
-
-      navigate(`/admissions/success?type=kg-std&app=${applicationNumber}`);
-    } catch (error: any) {
+      let tries = 0;
+      let lastError: any = null;
+      while (tries < 3) {
+        const applicationNumber = generateApplicationNumber();
+        const { error } = await supabase
+          .from('kg_std_applications')
+          .insert([{
+            application_number: applicationNumber,
+            full_name: data.fullName,
+            gender: data.gender,
+            date_of_birth: data.dateOfBirth,
+            stage: data.stage,
+            need_madrassa: data.needMadrassa,
+            previous_madrassa: data.previousMadrassa || null,
+            father_name: data.fatherName,
+            mother_name: data.motherName,
+            house_name: data.houseName,
+            post_office: data.postOffice,
+            village: data.village,
+            pincode: data.pincode,
+            district: data.district,
+            email: data.email || null,
+            mobile_number: data.mobileNumber,
+            previous_school: data.previousSchool || null,
+            has_siblings: data.hasSiblings,
+            siblings_names: data.siblingsNames || null,
+          }]);
+        if (!error) {
+          navigate(`/admissions/success?type=kg-std&app=${applicationNumber}`);
+          return;
+        }
+        lastError = error;        const msg = (error as any)?.message || '';
+        // Legacy schema fallback: retry insert with older columns if stage/madrassa fields missing
+        if (msg.toLowerCase().includes('column') && msg.toLowerCase().includes('does not exist')) {
+          const { error: legacyError } = await supabase
+            .from('kg_std_applications')
+            .insert([{
+              application_number: applicationNumber,
+              child_name: data.fullName,
+              gender: data.gender,
+              date_of_birth: data.dateOfBirth,
+              father_name: data.fatherName,
+              mother_name: data.motherName,
+              guardian_name: null,
+              house_name: data.houseName,
+              post_office: data.postOffice,
+              village: data.village,
+              pincode: data.pincode,
+              district: data.district,
+              email: data.email || null,
+              mobile_number: data.mobileNumber,
+              previous_school: data.previousSchool || null,
+            }]);
+          if (!legacyError) {
+            navigate(`/admissions/success?type=kg-std&app=${applicationNumber}`);
+            return;
+          }
+          lastError = legacyError;
+        }
+        // If duplicate application_number, retry
+        const dup = (error as any)?.message || "";
+        if (!(dup.includes('duplicate') || dup.includes('unique') || dup.includes('23505'))) break;
+        tries++;
+      }
+      const message = (lastError && (lastError as any).message) ? String((lastError as any).message) : 'Failed to submit application.';
       toast({
         title: "Submission Failed",
-        description: error.message || "Failed to submit application. Please try again.",
+        description: message,
+        variant: "destructive"
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to submit application. Please try again.";
+      toast({
+        title: "Submission Failed",
+        description: message,
         variant: "destructive"
       });
     } finally {
@@ -127,7 +191,7 @@ export function KGStdApplicationForm() {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleFormSubmit} className="space-y-6">
             {/* Student Details */}
             <Card>
               <CardHeader>

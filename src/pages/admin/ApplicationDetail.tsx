@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, User, Phone, Mail, MapPin, Calendar, School, CheckCircle, Trophy, Save } from "lucide-react";
 
+console.log('🔥 ApplicationDetail module loaded!');
+
 interface KGStdApplication {
   id: string;
   application_number: string;
@@ -104,6 +106,7 @@ const getStatusColor = (status: string) => {
 };
 
 export default function ApplicationDetail() {
+  console.log('🚀 ApplicationDetail component function called');
   const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -116,14 +119,24 @@ export default function ApplicationDetail() {
   const [interviewSubjects, setInterviewSubjects] = useState<InterviewSubject[]>([]);
   const [savingMarks, setSavingMarks] = useState(false);
 
+  console.log('🚀 ApplicationDetail component rendered with:', { type, id, application, applicationStatus: application?.status });
+
   useEffect(() => {
+    console.log('🔄 First useEffect triggered with:', { type, id });
     if (type && id) {
       fetchApplication();
-      if (application?.status === "interview_complete") {
-        fetchInterviewSubjects();
-      }
     }
-  }, [type, id, application?.status]);
+  }, [type, id]);
+
+  useEffect(() => {
+    console.log('🔄 Second useEffect triggered with:', { application, status: application?.status, type, id });
+    if (application && (application.status === "interview_complete" || application.status === "shortlisted_for_interview")) {
+      console.log('✅ Calling fetchInterviewSubjects because status matches');
+      fetchInterviewSubjects();
+    } else {
+      console.log('❌ Not calling fetchInterviewSubjects:', { hasApplication: !!application, status: application?.status });
+    }
+  }, [application?.status, type, id]);
 
   const fetchApplication = async () => {
     if (!type || !id) return;
@@ -141,15 +154,10 @@ export default function ApplicationDetail() {
       if (error) throw error;
       
       setApplication(data);
-      setNewStatus(data.status);
+      setNewStatus(data.status || "");
       setInterviewDate(data.interview_date || "");
       setInterviewTime(data.interview_time || "");
-      
-      // Fetch interview subjects if interview is complete
-      if (data.status === "interview_complete") {
-        await fetchInterviewSubjects();
-      }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: "Failed to fetch application details",
@@ -162,43 +170,60 @@ export default function ApplicationDetail() {
   };
 
   const fetchInterviewSubjects = async () => {
-    if (!type || !id) return;
+    console.log('🔍 fetchInterviewSubjects called with application:', application);
+    console.log('🔍 URL type parameter:', type);
+    if (!application || !type) {
+      console.log('❌ No application or type found');
+      return;
+    }
     
     try {
-      // First, get subject templates for the form type
       const formType = type === "kg_std" ? "kg_std" : "plus_one";
+      console.log('📋 Fetching subject templates for form_type:', formType);
+      // Fetch active subject templates for this form type
       const { data: templates, error: templatesError } = await supabase
-        .from("interview_subject_templates")
-        .select("*")
-        .eq("form_type", formType)
-        .eq("is_active", true)
-        .order("display_order");
+        .from('interview_subject_templates')
+        .select('*')
+        .eq('form_type', formType)
+        .eq('is_active', true)
+        .order('subject_name');
 
-      if (templatesError) throw templatesError;
+      console.log('📋 Subject templates result:', { templates, templatesError });
 
-      // Then, get existing marks for this application
+      if (templatesError) {
+        console.error('Error fetching subject templates:', templatesError);
+        return;
+      }
+
+      console.log('📊 Fetching existing marks for application_id:', application.id);
+      // Fetch existing marks for this application
       const { data: existingMarks, error: marksError } = await supabase
-        .from("interview_subjects")
-        .select("*")
-        .eq("application_id", id)
-        .eq("application_type", type);
+        .from('interview_subjects')
+        .select('*')
+        .eq('application_id', application.id);
 
-      if (marksError) throw marksError;
+      console.log('📊 Existing marks result:', { existingMarks, marksError });
+
+      if (marksError) {
+        console.error('Error fetching existing marks:', marksError);
+        return;
+      }
 
       // Combine templates with existing marks
-      const subjects: InterviewSubject[] = templates?.map(template => {
+      const subjects = templates?.map(template => {
         const existingMark = existingMarks?.find(mark => mark.subject_name === template.subject_name);
         return {
-          id: existingMark?.id,
+          id: template.id,
           subject_name: template.subject_name,
-          marks: existingMark?.marks || 0,
           max_marks: template.max_marks,
+          marks: existingMark?.marks || 0
         };
       }) || [];
 
+      console.log('✅ Final interview subjects:', subjects);
       setInterviewSubjects(subjects);
     } catch (error) {
-      console.error("Error fetching interview subjects:", error);
+      console.error('Error in fetchInterviewSubjects:', error);
     }
   };
 
@@ -232,6 +257,7 @@ export default function ApplicationDetail() {
           application_type: type,
           subject_name: subject.subject_name,
           marks: subject.marks,
+          max_marks: subject.max_marks,
         }));
 
       if (marksToInsert.length > 0) {
@@ -267,7 +293,7 @@ export default function ApplicationDetail() {
     try {
       const tableName = type === "kg_std" ? "kg_std_applications" : "plus_one_applications";
       
-      const updateData: any = { status: newStatus };
+      const updateData: { status: string; interview_date?: string; interview_time?: string } = { status: newStatus };
       
       if (newStatus === "shortlisted_for_interview" && interviewDate && interviewTime) {
         updateData.interview_date = interviewDate;
@@ -287,7 +313,7 @@ export default function ApplicationDetail() {
         title: "Success",
         description: "Application status updated successfully",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: "Failed to update application status",
@@ -570,13 +596,18 @@ export default function ApplicationDetail() {
       </Card>
 
       {/* Interview Mark List Section */}
-      {application.status === "interview_complete" && (
+      {(application.status === "interview_complete" || application.status === "shortlisted_for_interview") && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5" />
               Interview Mark List
             </CardTitle>
+            {interviewSubjects.length > 0 && (
+              <p className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-md border border-green-200">
+                ✅ {interviewSubjects.length} interview subjects loaded from Interview Settings
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {interviewSubjects.length > 0 ? (
@@ -623,10 +654,20 @@ export default function ApplicationDetail() {
                 </div>
               </>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No interview subjects configured for this application type.</p>
-                <p className="text-sm">Please configure subjects in Interview Settings first.</p>
+              <div className="text-center py-8">
+                <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
+                <p className="text-muted-foreground mb-2">No interview subjects configured for this application type.</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Configure subjects in Interview Settings to enable mark entry for this application.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.open('/admin/interview-settings', '_blank')}
+                  className="flex items-center gap-2"
+                >
+                  <School className="h-4 w-4" />
+                  Go to Interview Settings
+                </Button>
               </div>
             )}
           </CardContent>

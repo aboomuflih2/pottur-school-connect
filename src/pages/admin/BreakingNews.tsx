@@ -33,7 +33,7 @@ const BreakingNewsManager = () => {
     try {
       const { data, error } = await supabase
         .from('breaking_news')
-        .select('*')
+        .select('id, message, is_active, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -178,9 +178,11 @@ const BreakingNewsManager = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm bg-muted p-3 rounded-lg">
-              {currentActive.message}
-            </p>
+            <div className="space-y-2">
+              <p className="text-sm bg-muted p-3 rounded-lg">
+                {currentActive.message}
+              </p>
+            </div>
             <p className="text-xs text-muted-foreground mt-2">
               Last updated: {new Date(currentActive.updated_at).toLocaleString()}
             </p>
@@ -199,7 +201,7 @@ const BreakingNewsManager = () => {
         <CardContent>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="message">News Message</Label>
+              <Label htmlFor="message">Breaking News Message</Label>
               <Textarea
                 id="message"
                 value={message}
@@ -252,7 +254,7 @@ const BreakingNewsManager = () => {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="text-sm">{news.message}</p>
+                      <p className="text-sm text-muted-foreground">{news.message}</p>
                       <div className="flex items-center gap-4 mt-2">
                         <span className="text-xs text-muted-foreground">
                           Created: {new Date(news.created_at).toLocaleDateString()}

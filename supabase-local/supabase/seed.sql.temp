@@ -1,0 +1,16 @@
+-- Seed data for Pottur School Connect
+-- Only including data for existing tables
+
+-- Insert admission forms (matching existing schema)
+INSERT INTO "public"."admission_forms" ("id", "student_name", "parent_name", "email", "phone", "address", "grade", "previous_school", "status", "submitted_at") VALUES
+	('41d93d63-9a60-4780-b3ec-ef50c0fd70d9', 'Sample Student 1', 'Sample Parent 1', 'parent1@example.com', '+91-9876543210', '123 Main Street, City', 'KG1', 'Previous School A', 'pending', '2025-09-06 23:00:20.462146+00'),
+	('66935540-9b9d-4544-a4a2-8cf0796d03b5', 'Sample Student 2', 'Sample Parent 2', 'parent2@example.com', '+91-9876543211', '456 Oak Avenue, City', 'Standard 1', 'Previous School B', 'approved', '2025-09-06 23:00:20.462146+00');
+
+-- Insert news posts (matching existing schema)
+INSERT INTO "public"."news_posts" ("id", "title", "content", "excerpt", "featured_image", "author_id", "category", "tags", "is_published", "published_at", "created_at", "updated_at") VALUES
+	('99384a82-afb5-48d5-b339-27331349241d', 'Welcome to New Academic Year 2025-26', 'We are excited to announce the beginning of the new academic year 2025-26. Our school continues to provide quality education with modern facilities and experienced faculty. We look forward to welcoming all students back to campus.', 'Announcement for new academic year 2025-26', 'https://example.com/news-image.jpg', null, 'Announcements', '{"academic year","announcement","welcome"}', true, '2025-09-06 22:17:09.784736+00', '2025-09-06 22:17:09.784736+00', '2025-09-06 22:17:09.784736+00');
+
+-- Insert hero slides
+INSERT INTO "public"."hero_slides" ("id", "title", "subtitle", "image_url", "button_text", "button_url", "order_index", "is_active", "created_at", "updated_at") VALUES
+	('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Welcome to Pottur School', 'Excellence in Education Since 1985', 'https://example.com/hero-image-1.jpg', 'Learn More', '/about', 1, true, now(), now()),
+	('b2c3d4e5-f6g7-8901-bcde-f23456789012', 'Admissions Open', 'Join our community of learners', 'https://example.com/hero-image-2.jpg', 'Apply Now', '/admissions', 2, true, now(), now());

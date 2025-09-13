@@ -13,6 +13,21 @@ export function ApplicationSuccess() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const applicationNumber = searchParams.get("app");
   const applicationType = searchParams.get("type");
+  const [academicYear, setAcademicYear] = useState<string>("");
+
+  useEffect(() => {
+    const loadYear = async () => {
+      if (!applicationType) return;
+      const formType = applicationType === "kg-std" ? "kg_std" : "plus_one";
+      const { data } = await supabase
+        .from('admission_forms')
+        .select('academic_year')
+        .eq('form_type', formType)
+        .maybeSingle();
+      if (data?.academic_year) setAcademicYear(data.academic_year);
+    };
+    loadYear();
+  }, [applicationType]);
 
   const downloadApplicationPDF = async () => {
     if (!applicationNumber || !applicationType) return;
@@ -74,7 +89,6 @@ export function ApplicationSuccess() {
   }
 
   const formName = applicationType === "kg-std" ? "KG & STD" : "+1 / HSS";
-  const academicYear = applicationType === "kg-std" ? "2026-27" : "2025-26";
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center py-8">

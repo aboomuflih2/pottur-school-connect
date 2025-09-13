@@ -86,12 +86,30 @@ const InterviewSettings = () => {
 
   const saveSubjects = async () => {
     setIsSaving(true);
+    
     try {
+      // Check authentication status
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Get existing templates to compare changes
+      const { data: existingTemplates } = await supabase
+        .from("interview_subject_templates")
+        .select("*")
+        .in("form_type", ["kg_std", "plus_one"]);
+
       // Delete existing subjects
-      await supabase
+      const { error: deleteError } = await supabase
         .from("interview_subject_templates")
         .delete()
         .in("form_type", ["kg_std", "plus_one"]);
+      
+      if (deleteError) {
+        throw deleteError;
+      }
 
       // Insert new subjects
       const allSubjects = [
@@ -110,24 +128,60 @@ const InterviewSettings = () => {
       ];
 
       if (allSubjects.length > 0) {
-        const { error } = await supabase
+        const { data: insertData, error: insertError } = await supabase
           .from("interview_subject_templates")
           .insert(allSubjects);
 
-        if (error) throw error;
+        if (insertError) throw insertError;
+      }
+
+      // Synchronize interview_subjects table with new templates
+      // Update max_marks for existing subjects that match new templates
+      for (const newSubject of allSubjects) {
+        const { error: updateError } = await supabase
+          .from("interview_subjects")
+          .update({ 
+            max_marks: newSubject.max_marks,
+            subject_name: newSubject.subject_name 
+          })
+          .eq("subject_name", newSubject.subject_name)
+          .eq("application_type", newSubject.form_type);
+
+        if (updateError) {
+          console.warn(`Warning: Could not update existing marks for ${newSubject.subject_name}:`, updateError);
+        }
+      }
+
+      // Remove interview_subjects records for subjects that no longer exist in templates
+      if (existingTemplates && existingTemplates.length > 0) {
+        const newSubjectNames = allSubjects.map(s => s.subject_name);
+        const removedSubjects = existingTemplates.filter(existing => 
+          !newSubjectNames.includes(existing.subject_name)
+        );
+
+        for (const removedSubject of removedSubjects) {
+          const { error: deleteSubjectError } = await supabase
+            .from("interview_subjects")
+            .delete()
+            .eq("subject_name", removedSubject.subject_name)
+            .eq("application_type", removedSubject.form_type);
+
+          if (deleteSubjectError) {
+            console.warn(`Warning: Could not remove marks for deleted subject ${removedSubject.subject_name}:`, deleteSubjectError);
+          }
+        }
       }
 
       toast({
         title: "Success",
-        description: "Interview subjects updated successfully",
+        description: "Interview subjects updated successfully! Existing marks have been synchronized with the new settings.",
       });
 
       fetchSubjects();
     } catch (error) {
-      console.error("Error saving subjects:", error);
       toast({
         title: "Error",
-        description: "Failed to save interview subjects",
+        description: `Failed to save interview subjects: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -202,10 +256,19 @@ const InterviewSettings = () => {
     <div className="container mx-auto px-6 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Interview Settings</h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mb-4">
           Define standard interview subjects for each application type. These subjects will be automatically 
           applied to all applicants when adding their interview marks.
         </p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="font-semibold text-blue-900 mb-2">📋 How to use Interview Subjects:</h3>
+          <ol className="text-sm text-blue-800 space-y-1">
+            <li>1. Add or modify subjects below and click "Save All Changes"</li>
+            <li>2. Go to <strong>Admission Applications</strong> and select any application</li>
+            <li>3. Scroll down to the <strong>"Interview Mark List"</strong> section</li>
+            <li>4. Your saved subjects will appear there for entering marks</li>
+          </ol>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">

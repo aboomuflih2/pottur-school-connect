@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { icons } from "lucide-react";
+import { icons, type LucideIcon } from "lucide-react";
 
 interface SchoolStat {
   id: string;
@@ -97,7 +97,7 @@ const LegacySection = () => {
               ))
             ) : (
               stats.map((stat) => {
-                const IconComponent = (icons as any)[stat.icon_name] || icons.Trophy;
+                const IconComponent = (icons as Record<string, LucideIcon>)[stat.icon_name] || icons.Trophy;
                 return (
                   <Card key={stat.id} className="p-6 text-center shadow-card hover:shadow-elegant transition-smooth bg-card">
                     <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-4">

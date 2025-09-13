@@ -52,6 +52,12 @@ export function PlusOneApplicationForm() {
     }
   });
 
+  // Ensure no native form submission refreshes the page
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    form.handleSubmit(onSubmit)(e);
+  };
+
   const watchedHasSiblings = form.watch("hasSiblings");
 
   const generateApplicationNumber = () => {
@@ -63,41 +69,50 @@ export function PlusOneApplicationForm() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      const applicationNumber = generateApplicationNumber();
-      
-      const { error } = await supabase
-        .from('plus_one_applications')
-        .insert([{
-          application_number: applicationNumber,
-          full_name: data.fullName,
-          gender: data.gender,
-          date_of_birth: data.dateOfBirth,
-          father_name: data.fatherName,
-          mother_name: data.motherName,
-          house_name: data.houseName,
-          landmark: data.landmark || null,
-          post_office: data.postOffice,
-          village: data.village,
-          pincode: data.pincode,
-          district: data.district,
-          email: data.email || null,
-          mobile_number: data.mobileNumber,
-          tenth_school: data.tenthSchool,
-          board: data.board,
-          exam_roll_number: data.examRollNumber,
-          exam_year: data.examYear,
-          stream: data.stream,
-          has_siblings: data.hasSiblings,
-          siblings_names: data.siblingsNames || null,
-        }]);
-
-      if (error) throw error;
-
-      navigate(`/admissions/success?type=plus-one&app=${applicationNumber}`);
-    } catch (error: any) {
+      let tries = 0;
+      let lastError: any = null;
+      while (tries < 3) {
+        const applicationNumber = generateApplicationNumber();
+        const { error } = await supabase
+          .from('plus_one_applications')
+          .insert([{
+            application_number: applicationNumber,
+            full_name: data.fullName,
+            gender: data.gender,
+            date_of_birth: data.dateOfBirth,
+            father_name: data.fatherName,
+            mother_name: data.motherName,
+            house_name: data.houseName,
+            landmark: data.landmark || null,
+            post_office: data.postOffice,
+            village: data.village,
+            pincode: data.pincode,
+            district: data.district,
+            email: data.email || null,
+            mobile_number: data.mobileNumber,
+            tenth_school: data.tenthSchool,
+            board: data.board,
+            exam_roll_number: data.examRollNumber,
+            exam_year: data.examYear,
+            stream: data.stream,
+            has_siblings: data.hasSiblings,
+            siblings_names: data.siblingsNames || null,
+          }]);
+        if (!error) {
+          navigate(`/admissions/success?type=plus-one&app=${applicationNumber}`);
+          return;
+        }
+        lastError = error;
+        const msg = (error as any)?.message || "";
+        if (!(msg.includes('duplicate') || msg.includes('unique') || msg.includes('23505'))) break;
+        tries++;
+      }
+      throw lastError || new Error('Failed to submit application');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to submit application. Please try again.";
       toast({
         title: "Submission Failed",
-        description: error.message || "Failed to submit application. Please try again.",
+        description: message,
         variant: "destructive"
       });
     } finally {
@@ -122,7 +137,7 @@ export function PlusOneApplicationForm() {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleFormSubmit} className="space-y-6">
             {/* Personal Details */}
             <Card>
               <CardHeader>

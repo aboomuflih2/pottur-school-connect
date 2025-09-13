@@ -184,8 +184,8 @@ const SchoolStats = () => {
     }
   };
 
-  const updateStat = (id: string, field: keyof SchoolStat, value: any) => {
-    setStats(stats.map(stat => 
+  const updateStat = <K extends keyof SchoolStat>(id: string, field: K, value: SchoolStat[K]) => {
+    setStats(stats.map((stat) =>
       stat.id === id ? { ...stat, [field]: value } : stat
     ));
   };

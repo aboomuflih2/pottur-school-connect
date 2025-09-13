@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leadership Test</title>
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
+        
+        const supabaseUrl = 'http://127.0.0.1:54325';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+        
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        async function testConnection() {
+            console.log('Testing Supabase connection...');
+            
+            try {
+                // Test basic connection
+                const { data, error } = await supabase
+                    .from('leadership_messages')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    console.error('Error querying leadership_messages:', error);
+                } else {
+                    console.log('Successfully connected! Data:', data);
+                }
+                
+                // Test update operation
+                const { error: updateError } = await supabase
+                    .from('leadership_messages')
+                    .update({ person_name: 'Test Name' })
+                    .eq('position', 'chairman');
+                
+                if (updateError) {
+                    console.error('Error updating leadership_messages:', updateError);
+                } else {
+                    console.log('Update test successful!');
+                }
+                
+            } catch (err) {
+                console.error('Connection test failed:', err);
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', testConnection);
+    </script>
+</head>
+<body>
+    <h1>Leadership Test Page</h1>
+    <p>Check the browser console for test results.</p>
+</body>
+</html>
