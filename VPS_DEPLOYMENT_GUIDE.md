@@ -146,14 +146,15 @@ DATABASE_PASSWORD="your-secure-password"
 JWT_SECRET="your-jwt-secret-key-here"
 SESSION_SECRET="your-session-secret-here"
 
-# Domain Configuration
-VITE_APP_DOMAIN="https://your-domain.com"
-VITE_API_BASE_URL="https://your-domain.com/api"
+# Domain Configuration (VPS IP: 63.250.52.6)
+VITE_APP_DOMAIN="http://63.250.52.6"
+VITE_API_BASE_URL="http://63.250.52.6/api"
 
-# Supabase Configuration (if using Supabase)
-VITE_SUPABASE_URL="https://your-project-ref.supabase.co"
-VITE_SUPABASE_PUBLISHABLE_KEY="your-production-anon-key"
-VITE_SUPABASE_SERVICE_ROLE_KEY="your-production-service-role-key"
+# Self-Hosted Supabase Configuration (VPS IP: 63.250.52.6)
+VITE_SUPABASE_URL="http://63.250.52.6:8000"
+VITE_SUPABASE_STUDIO_URL="http://63.250.52.6:3000"
+VITE_SUPABASE_PUBLISHABLE_KEY="your-self-hosted-anon-key"
+VITE_SUPABASE_SERVICE_ROLE_KEY="your-self-hosted-service-role-key"
 ```
 
 ### 3. Deploy Using Automated Script
