@@ -6,7 +6,7 @@ dotenv.config();
 // Use the exact same configuration as the frontend
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  process.env.VITE_SUPABASE_ANON_KEY,
   {
     auth: {
       persistSession: true,
@@ -45,9 +45,9 @@ async function testFrontendFlow() {
           .select('role')
           .eq('user_id', userId)
           .eq('role', 'admin')
-          .single();
+          .limit(1);
         
-        return !error && !!data;
+        return !error && data && data.length > 0;
       } catch {
         return false;
       }

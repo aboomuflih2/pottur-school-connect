@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import Index from "./pages/Index";
 import About from "./pages/About";
+import Contact from "./pages/Contact";
 import Academics from "./pages/Academics";
 import NewsEvents from "./pages/NewsEvents";
 import NotFound from "./pages/NotFound";
@@ -16,6 +17,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import HeroSlidesManager from "./pages/admin/HeroSlides";
 import BreakingNewsManager from "./pages/admin/BreakingNews";
 import ContactsManager from "./pages/admin/Contacts";
+import ContactPageManager from "./pages/admin/ContactPageManager";
 import AboutPageManager from "./pages/admin/AboutPage";
 import LeadershipManager from "./pages/admin/Leadership";
 import SchoolFeaturesManager from "./pages/admin/SchoolFeatures";
@@ -49,6 +51,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/academics" element={<Academics />} />
             <Route path="/news-events" element={<NewsEvents />} />
             <Route path="/news" element={<NewsEvents />} />
@@ -69,6 +72,7 @@ const App = () => (
                   <Route path="hero-slides" element={<HeroSlidesManager />} />
                   <Route path="breaking-news" element={<BreakingNewsManager />} />
                   <Route path="contacts" element={<ContactsManager />} />
+                  <Route path="contact-page" element={<ContactPageManager />} />
                   <Route path="about" element={<AboutPageManager />} />
                   <Route path="leadership" element={<LeadershipManager />} />
                   <Route path="school-features" element={<SchoolFeaturesManager />} />

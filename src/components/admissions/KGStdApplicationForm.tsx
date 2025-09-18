@@ -91,19 +91,16 @@ export function KGStdApplicationForm() {
     setIsSubmitting(true);
     try {
       let tries = 0;
-      let lastError: any = null;
+      let lastError: Error | null = null;
       while (tries < 3) {
         const applicationNumber = generateApplicationNumber();
         const { error } = await supabase
           .from('kg_std_applications')
           .insert([{
             application_number: applicationNumber,
-            full_name: data.fullName,
+            fullname_name: data.fullName,
             gender: data.gender,
             date_of_birth: data.dateOfBirth,
-            stage: data.stage,
-            need_madrassa: data.needMadrassa,
-            previous_madrassa: data.previousMadrassa || null,
             father_name: data.fatherName,
             mother_name: data.motherName,
             house_name: data.houseName,
@@ -111,24 +108,21 @@ export function KGStdApplicationForm() {
             village: data.village,
             pincode: data.pincode,
             district: data.district,
-            email: data.email || null,
             mobile_number: data.mobileNumber,
-            previous_school: data.previousSchool || null,
-            has_siblings: data.hasSiblings,
-            siblings_names: data.siblingsNames || null,
           }]);
         if (!error) {
           navigate(`/admissions/success?type=kg-std&app=${applicationNumber}`);
           return;
         }
-        lastError = error;        const msg = (error as any)?.message || '';
+        lastError = error;
+        const msg = error?.message || '';
         // Legacy schema fallback: retry insert with older columns if stage/madrassa fields missing
         if (msg.toLowerCase().includes('column') && msg.toLowerCase().includes('does not exist')) {
           const { error: legacyError } = await supabase
             .from('kg_std_applications')
             .insert([{
               application_number: applicationNumber,
-              child_name: data.fullName,
+              fullname_name: data.fullName,
               gender: data.gender,
               date_of_birth: data.dateOfBirth,
               father_name: data.fatherName,
@@ -150,11 +144,11 @@ export function KGStdApplicationForm() {
           lastError = legacyError;
         }
         // If duplicate application_number, retry
-        const dup = (error as any)?.message || "";
+        const dup = error?.message || "";
         if (!(dup.includes('duplicate') || dup.includes('unique') || dup.includes('23505'))) break;
         tries++;
       }
-      const message = (lastError && (lastError as any).message) ? String((lastError as any).message) : 'Failed to submit application.';
+      const message = lastError?.message || 'Failed to submit application.';
       toast({
         title: "Submission Failed",
         description: message,

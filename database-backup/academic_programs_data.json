@@ -1,0 +1,78 @@
+{
+  "table": "academic_programs",
+  "rowCount": 6,
+  "data": [
+    {
+      "id": "b716dc35-1af6-463a-b491-74d94deb891a",
+      "program_title": "Pre-School Education",
+      "short_description": "Early childhood development and learning foundation",
+      "full_description": "Our pre-school program focuses on holistic development of children aged 3-5 years, providing a nurturing environment that promotes cognitive, social, emotional, and physical growth through play-based learning and structured activities.",
+      "main_image": null,
+      "category": "pre-school",
+      "is_active": true,
+      "display_order": 1,
+      "created_at": "2025-09-18T03:34:09.198Z",
+      "updated_at": "2025-09-18T03:34:09.198Z"
+    },
+    {
+      "id": "6661d01c-4215-48e5-91dd-51ee8570d901",
+      "program_title": "Primary School",
+      "short_description": "Building strong academic fundamentals",
+      "full_description": "Primary education from grades 1-5 emphasizes core subjects including Mathematics, Science, English, and Social Studies. Our curriculum is designed to develop critical thinking skills, creativity, and a love for learning through interactive teaching methods.",
+      "main_image": null,
+      "category": "primary",
+      "is_active": true,
+      "display_order": 2,
+      "created_at": "2025-09-18T03:34:09.198Z",
+      "updated_at": "2025-09-18T03:34:09.198Z"
+    },
+    {
+      "id": "3657ddd6-c8d5-49ac-b8a6-42f0fb4c5851",
+      "program_title": "Upper Primary School",
+      "short_description": "Advanced learning and skill development",
+      "full_description": "Grades 6-8 focus on preparing students for higher secondary education with enhanced curriculum in Mathematics, Science, Languages, and Social Sciences. Students develop research skills, analytical thinking, and subject specialization.",
+      "main_image": null,
+      "category": "up-school",
+      "is_active": true,
+      "display_order": 3,
+      "created_at": "2025-09-18T03:34:09.198Z",
+      "updated_at": "2025-09-18T03:34:09.198Z"
+    },
+    {
+      "id": "ffa7149c-4b49-46b9-9d41-11f0f201db01",
+      "program_title": "High School Education",
+      "short_description": "Comprehensive secondary education",
+      "full_description": "High school program for grades 9-10 provides comprehensive education following state board curriculum. Students prepare for board examinations while developing leadership skills, career awareness, and academic excellence.",
+      "main_image": null,
+      "category": "high-school",
+      "is_active": true,
+      "display_order": 4,
+      "created_at": "2025-09-18T03:34:09.198Z",
+      "updated_at": "2025-09-18T03:34:09.198Z"
+    },
+    {
+      "id": "b6a802c7-9e7a-4e14-bc94-db5013278b7c",
+      "program_title": "Higher Secondary",
+      "short_description": "Specialized streams for career preparation",
+      "full_description": "Grades 11-12 offer specialized streams in Science, Commerce, and Arts. Students receive focused preparation for competitive examinations and higher education with experienced faculty and modern facilities.",
+      "main_image": null,
+      "category": "higher-secondary",
+      "is_active": true,
+      "display_order": 5,
+      "created_at": "2025-09-18T03:34:09.198Z",
+      "updated_at": "2025-09-18T03:34:09.198Z"
+    },
+    {
+      "id": "4bbf04ec-798c-487f-bd9e-5b3c72531818",
+      "program_title": "Competitive Coaching",
+      "short_description": "Excellence in competitive examinations",
+      "full_description": "Specialized coaching for JEE, NEET, UPSC, and other competitive examinations. Expert faculty, comprehensive study materials, and regular assessments ensure students achieve their career goals in engineering, medical, and civil services.",
+      "main_image": null,
+      "category": "competitive",
+      "is_active": true,
+      "display_order": 6,
+      "created_at": "2025-09-18T03:34:09.198Z",
+      "updated_at": "2025-09-18T03:34:09.198Z"
+    }
+  ]
+}

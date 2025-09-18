@@ -70,7 +70,7 @@ export function PlusOneApplicationForm() {
     setIsSubmitting(true);
     try {
       let tries = 0;
-      let lastError: any = null;
+      let lastError: Error | null = null;
       while (tries < 3) {
         const applicationNumber = generateApplicationNumber();
         const { error } = await supabase
@@ -103,7 +103,7 @@ export function PlusOneApplicationForm() {
           return;
         }
         lastError = error;
-        const msg = (error as any)?.message || "";
+        const msg = error?.message || "";
         if (!(msg.includes('duplicate') || msg.includes('unique') || msg.includes('23505'))) break;
         tries++;
       }

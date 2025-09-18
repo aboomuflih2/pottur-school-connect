@@ -1,0 +1,52 @@
+-- VPS Database Permissions Migration
+-- Generated: 2025-09-18T04:56:07.345Z
+
+-- Grant permissions to anon and authenticated roles
+GRANT SELECT ON academic_programs TO anon;
+GRANT ALL PRIVILEGES ON academic_programs TO authenticated;
+GRANT SELECT ON admission_forms TO anon;
+GRANT ALL PRIVILEGES ON admission_forms TO authenticated;
+GRANT SELECT ON admission_forms_legacy TO anon;
+GRANT ALL PRIVILEGES ON admission_forms_legacy TO authenticated;
+GRANT SELECT ON article_comments TO anon;
+GRANT ALL PRIVILEGES ON article_comments TO authenticated;
+GRANT SELECT ON article_likes TO anon;
+GRANT ALL PRIVILEGES ON article_likes TO authenticated;
+GRANT SELECT ON audit_logs TO anon;
+GRANT ALL PRIVILEGES ON audit_logs TO authenticated;
+GRANT SELECT ON breaking_news TO anon;
+GRANT ALL PRIVILEGES ON breaking_news TO authenticated;
+GRANT SELECT ON contact_submissions TO anon;
+GRANT ALL PRIVILEGES ON contact_submissions TO authenticated;
+GRANT SELECT ON events TO anon;
+GRANT ALL PRIVILEGES ON events TO authenticated;
+GRANT SELECT ON gallery_photos TO anon;
+GRANT ALL PRIVILEGES ON gallery_photos TO authenticated;
+GRANT SELECT ON hero_slides TO anon;
+GRANT ALL PRIVILEGES ON hero_slides TO authenticated;
+GRANT SELECT ON interview_subject_templates TO anon;
+GRANT ALL PRIVILEGES ON interview_subject_templates TO authenticated;
+GRANT SELECT ON interview_subjects TO anon;
+GRANT ALL PRIVILEGES ON interview_subjects TO authenticated;
+GRANT SELECT ON kg_std_applications TO anon;
+GRANT ALL PRIVILEGES ON kg_std_applications TO authenticated;
+GRANT SELECT ON leadership_messages TO anon;
+GRANT ALL PRIVILEGES ON leadership_messages TO authenticated;
+GRANT SELECT ON news_posts TO anon;
+GRANT ALL PRIVILEGES ON news_posts TO authenticated;
+GRANT SELECT ON page_content TO anon;
+GRANT ALL PRIVILEGES ON page_content TO authenticated;
+GRANT SELECT ON plus_one_applications TO anon;
+GRANT ALL PRIVILEGES ON plus_one_applications TO authenticated;
+GRANT SELECT ON school_features TO anon;
+GRANT ALL PRIVILEGES ON school_features TO authenticated;
+GRANT SELECT ON school_stats TO anon;
+GRANT ALL PRIVILEGES ON school_stats TO authenticated;
+GRANT SELECT ON social_media_links TO anon;
+GRANT ALL PRIVILEGES ON social_media_links TO authenticated;
+GRANT SELECT ON staff_counts TO anon;
+GRANT ALL PRIVILEGES ON staff_counts TO authenticated;
+GRANT SELECT ON testimonials TO anon;
+GRANT ALL PRIVILEGES ON testimonials TO authenticated;
+GRANT SELECT ON user_roles TO anon;
+GRANT ALL PRIVILEGES ON user_roles TO authenticated;

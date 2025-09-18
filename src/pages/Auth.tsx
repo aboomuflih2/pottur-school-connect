@@ -33,8 +33,9 @@ export default function Auth() {
       } else {
         navigate("/");
       }
-    } catch (error: any) {
-      setError(error.message || "An error occurred during sign in");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "An error occurred during sign in";
+      setError(message);
     } finally {
       setLoading(false);
     }

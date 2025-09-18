@@ -1,0 +1,42 @@
+{
+  "table": "page_content",
+  "rowCount": 4,
+  "data": [
+    {
+      "id": "31b7b083-0ede-437b-906b-296d7043a400",
+      "page_key": "about_legacy",
+      "page_title": "School Legacy",
+      "content": "Our school has a rich history spanning over decades, committed to providing quality education and nurturing young minds.",
+      "meta_description": "Learn about our school's rich history and legacy",
+      "created_at": "2025-09-18T03:34:09.367Z",
+      "updated_at": "2025-09-18T03:34:09.367Z"
+    },
+    {
+      "id": "d4991d29-707f-4611-a92a-5522ebf3a716",
+      "page_key": "about_mission",
+      "page_title": "Our Mission",
+      "content": "To provide holistic education that develops intellectual, emotional, and social capabilities of our students, preparing them for future challenges.",
+      "meta_description": "Our mission statement and educational philosophy",
+      "created_at": "2025-09-18T03:34:09.367Z",
+      "updated_at": "2025-09-18T03:34:09.367Z"
+    },
+    {
+      "id": "eb7f8337-6bff-4565-a1ba-cc6f049c9813",
+      "page_key": "about_vision",
+      "page_title": "Our Vision",
+      "content": "To be a leading educational institution that inspires excellence, creativity, and lifelong learning in every student.",
+      "meta_description": "Our vision for the future of education",
+      "created_at": "2025-09-18T03:34:09.367Z",
+      "updated_at": "2025-09-18T03:34:09.367Z"
+    },
+    {
+      "id": "259756e7-7edc-4919-bb7e-12c40434e221",
+      "page_key": "contact_office_hours",
+      "page_title": "dfbhgfb",
+      "content": "gfgrfn",
+      "meta_description": "{}",
+      "created_at": "2025-09-18T04:13:17.379Z",
+      "updated_at": "2025-09-18T04:13:17.379Z"
+    }
+  ]
+}

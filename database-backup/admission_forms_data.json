@@ -1,0 +1,22 @@
+{
+  "table": "admission_forms",
+  "rowCount": 2,
+  "data": [
+    {
+      "id": "82714afa-193b-41c6-af87-f3f7fe1bd706",
+      "form_type": "kg_std",
+      "is_active": true,
+      "academic_year": "Academic year 2026-27",
+      "created_at": "2025-09-18T03:34:09.464Z",
+      "updated_at": "2025-09-18T03:34:09.464Z"
+    },
+    {
+      "id": "4647e707-172b-4226-a198-6a4ce780ddb3",
+      "form_type": "plus_one",
+      "is_active": true,
+      "academic_year": "Academic year 2026-27",
+      "created_at": "2025-09-18T03:34:09.464Z",
+      "updated_at": "2025-09-18T03:34:09.464Z"
+    }
+  ]
+}

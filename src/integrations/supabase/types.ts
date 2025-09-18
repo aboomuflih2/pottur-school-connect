@@ -395,7 +395,7 @@ export type Database = {
           district: string
           email: string | null
           father_name: string
-          full_name: string
+          fullname_name: string
           gender: string
           has_siblings: boolean | null
           house_name: string
@@ -422,7 +422,7 @@ export type Database = {
           district: string
           email?: string | null
           father_name: string
-          full_name: string
+          fullname_name: string
           gender: string
           has_siblings?: boolean | null
           house_name: string
@@ -449,7 +449,7 @@ export type Database = {
           district?: string
           email?: string | null
           father_name?: string
-          full_name?: string
+          fullname_name?: string
           gender?: string
           has_siblings?: boolean | null
           house_name?: string

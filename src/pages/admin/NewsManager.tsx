@@ -91,7 +91,7 @@ const NewsManager = () => {
     }
 
     const typed = (data ?? []) as CommentJoinRow[];
-    const commentsWithTitles: Comment[] = typed.map((row: any) => ({
+    const commentsWithTitles: Comment[] = typed.map((row: CommentJoinRow) => ({
       id: row.id,
       author_name: row.author_name,
       author_email: row.author_email,

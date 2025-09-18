@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AboutHeroSection from "@/components/about/AboutHeroSection";
@@ -8,8 +8,10 @@ import AboutLeadership from "@/components/about/AboutLeadership";
 import AboutTeamStats from "@/components/about/AboutTeamStats";
 import AboutFeatures from "@/components/about/AboutFeatures";
 import AboutTestimonials from "@/components/about/AboutTestimonials";
+import { AdmissionsModal } from "@/components/admissions/AdmissionsModal";
 
 const About = () => {
+  const [isAdmissionsModalOpen, setIsAdmissionsModalOpen] = useState(false);
   useEffect(() => {
     // Set page title and meta description
     document.title = "About Us - Modern Higher Secondary School, Pottur";
@@ -22,7 +24,7 @@ const About = () => {
 
   return (
     <div className="min-h-screen">
-      <Header />
+      <Header onAdmissionsClick={() => setIsAdmissionsModalOpen(true)} />
       <main>
         <AboutHeroSection />
         <AboutLegacySection />
@@ -33,6 +35,10 @@ const About = () => {
         <AboutTestimonials />
       </main>
       <Footer />
+      <AdmissionsModal 
+        isOpen={isAdmissionsModalOpen} 
+        onClose={() => setIsAdmissionsModalOpen(false)} 
+      />
     </div>
   );
 };

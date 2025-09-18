@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -33,7 +33,7 @@ async function testFrontendBackendConnection() {
       results.environmentVariables = true;
     } else {
       console.log('❌ Missing environment variables');
-      results.errors.push('Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY');
+      results.errors.push('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
     }
 
     // 2. Test Supabase Connection

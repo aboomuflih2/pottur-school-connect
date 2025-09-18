@@ -20,6 +20,16 @@ interface ApplicationData {
   // Add other fields as needed
 }
 
+interface InterviewMark {
+  id: string;
+  application_id: string;
+  application_type: string;
+  subject_name: string;
+  marks_obtained: number;
+  total_marks: number;
+  created_at: string;
+}
+
 const statusSteps = [
   { key: "submitted", label: "Submitted", description: "Application received" },
   { key: "under_review", label: "Under Review", description: "Being reviewed by admission committee" },
@@ -38,7 +48,7 @@ export function ApplicationTracking() {
   const [applicationType, setApplicationType] = useState<"kg_std" | "plus_one" | null>(null);
   const [academicYear, setAcademicYear] = useState<string>("");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [interviewMarks, setInterviewMarks] = useState<any[]>([]);
+  const [interviewMarks, setInterviewMarks] = useState<InterviewMark[]>([]);
   const [loadingMarks, setLoadingMarks] = useState(false);
 
   const applicationNumber = searchParams.get("app");

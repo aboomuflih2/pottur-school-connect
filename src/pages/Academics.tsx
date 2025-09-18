@@ -4,12 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Database } from "@/integrations/supabase/types";
+import { AdmissionsModal } from "@/components/admissions/AdmissionsModal";
 
 type AcademicProgram = Database["public"]["Tables"]["academic_programs"]["Row"];
 
 const Academics = () => {
   const [programs, setPrograms] = useState<AcademicProgram[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmissionsModalOpen, setIsAdmissionsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -69,7 +71,7 @@ const Academics = () => {
       </Helmet>
 
       <div className="min-h-screen">
-        <Header />
+        <Header onAdmissionsClick={() => setIsAdmissionsModalOpen(true)} />
         
         {/* Hero Section */}
         <section className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-background py-24 overflow-hidden">
@@ -221,6 +223,10 @@ const Academics = () => {
         </section>
 
         <Footer />
+        <AdmissionsModal 
+          isOpen={isAdmissionsModalOpen} 
+          onClose={() => setIsAdmissionsModalOpen(false)} 
+        />
       </div>
     </>
   );

@@ -2,6 +2,11 @@ import { useState, useEffect } from "react";
 import { Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+interface BreakingNewsData {
+  message: string;
+  is_active: boolean;
+}
+
 const BreakingNews = () => {
   const [newsText, setNewsText] = useState(
     "Admissions Open for Academic Year 2024-25 | Online Application Available | Contact: 0494-2699645 | Visit our campus for more details"
@@ -18,16 +23,16 @@ const BreakingNews = () => {
         .select("message, is_active")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
-        .limit(1);
+        .limit(1)
+        .returns<BreakingNewsData[]>();
 
       if (error) {
         console.error("Error fetching breaking news:", error);
         return;
       }
 
-      if (data && data.length > 0 && (data[0] as any).message) {
-        // Cast because supabase-js types are not wired here
-        setNewsText((data[0] as any).message as string);
+      if (data && data.length > 0 && data[0].message) {
+        setNewsText(data[0].message);
       }
     } catch (error) {
       console.error("Error loading breaking news:", error);

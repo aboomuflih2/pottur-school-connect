@@ -51,7 +51,7 @@ const GalleryManager = () => {
       return;
     }
 
-    const normalized = (data ?? []).map((row: any) => ({
+    const normalized = (data ?? []).map((row) => ({
       id: row.id,
       image_url: row.image_url,
       title: row.title,
@@ -80,7 +80,7 @@ const GalleryManager = () => {
     const photoData = {
       ...formData,
       display_order: editingPhoto?.display_order ?? photos.length + 1,
-    } as any;
+    };
 
     let error;
 
@@ -90,9 +90,9 @@ const GalleryManager = () => {
         .update(photoData)
         .eq("id", editingPhoto.id));
       // Fallback to legacy schema name is_featured
-      if (error && ((error as any).message || "").toLowerCase().includes("is_active")) {
-        const legacy = { ...photoData } as any;
-        legacy.is_featured = legacy.is_active;
+      const errorMessage = error instanceof Error ? error.message : "";
+      if (error && errorMessage.toLowerCase().includes("is_active")) {
+        const legacy: Record<string, unknown> = { ...photoData, is_featured: photoData.is_active };
         delete legacy.is_active;
         ({ error } = await supabase
           .from("gallery_photos")
@@ -105,9 +105,9 @@ const GalleryManager = () => {
         .insert(photoData)
         .select()
         .single());
-      if (error && ((error as any).message || "").toLowerCase().includes("is_active")) {
-        const legacy = { ...photoData } as any;
-        legacy.is_featured = legacy.is_active;
+      const errorMessage = error instanceof Error ? error.message : "";
+      if (error && errorMessage.toLowerCase().includes("is_active")) {
+        const legacy: Record<string, unknown> = { ...photoData, is_featured: photoData.is_active };
         delete legacy.is_active;
         ({ error } = await supabase
           .from("gallery_photos")
@@ -119,7 +119,7 @@ const GalleryManager = () => {
 
     if (error) {
       console.error("Error saving photo:", error);
-      const msg = (error as any)?.message || "";
+      const msg = error instanceof Error ? error.message : "";
       const help = msg.toLowerCase().includes("row level security") || msg.toLowerCase().includes("policy")
         ? "Check gallery_photos RLS policies and that your user has admin role."
         : undefined;
@@ -154,20 +154,22 @@ const GalleryManager = () => {
   const toggleActiveStatus = async (photo: GalleryPhoto) => {
     let { error } = await supabase
       .from("gallery_photos")
-      .update({ is_active: !photo.is_active } as any)
+      .update({ is_active: !photo.is_active })
       .eq("id", photo.id);
 
-    if (error && ((error as any).message || "").toLowerCase().includes("is_active")) {
+    const errorMessage = error instanceof Error ? error.message : "";
+    if (error && errorMessage.toLowerCase().includes("is_active")) {
       const retry = await supabase
         .from("gallery_photos")
-        .update({ is_featured: !photo.is_active } as any)
+        .update({ is_featured: !photo.is_active })
         .eq("id", photo.id);
       error = retry.error;
     }
 
     if (error) {
       console.error("Error updating photo status:", error);
-      toast({ title: "Error updating photo status", description: (error as any).message, variant: "destructive" });
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      toast({ title: "Error updating photo status", description: errorMsg, variant: "destructive" });
       return;
     }
 
@@ -277,9 +279,10 @@ const GalleryManager = () => {
       const publicUrl = publicData.publicUrl;
       setFormData(prev => ({ ...prev, image_url: publicUrl }));
       toast({ title: 'File uploaded', description: 'Image uploaded to gallery storage.' });
-    } catch (err: any) {
+    } catch (err) {
       console.error('Upload error:', err);
-      toast({ title: 'Upload error', description: err?.message || 'Please try again.', variant: 'destructive' });
+      const errorMessage = err instanceof Error ? err.message : 'Please try again.';
+      toast({ title: 'Upload error', description: errorMessage, variant: 'destructive' });
     } finally {
       // reset input so same file can be re-selected if needed
       if (fileInputRef.current) fileInputRef.current.value = '';

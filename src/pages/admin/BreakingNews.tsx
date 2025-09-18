@@ -5,13 +5,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { adminSupabase as supabase } from '@/integrations/supabase/admin-client';
 import { toast } from '@/hooks/use-toast';
 import { Radio, Save } from 'lucide-react';
 
 interface BreakingNews {
   id: string;
-  message: string;
+  title: string;
+  content: string;
+  message?: string; // For backward compatibility
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -33,18 +35,24 @@ const BreakingNewsManager = () => {
     try {
       const { data, error } = await supabase
         .from('breaking_news')
-        .select('id, message, is_active, created_at, updated_at')
+        .select('id, title, content, message, is_active, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      setBreakingNews(data || []);
+      // Map the data to include message for backward compatibility
+      const mappedData = data?.map(item => ({
+        ...item,
+        message: item.content || item.title
+      })) || [];
+      
+      setBreakingNews(mappedData);
       
       // Find the currently active news
-      const active = data?.find(item => item.is_active);
+      const active = mappedData?.find(item => item.is_active);
       if (active) {
         setCurrentActive(active);
-        setMessage(active.message);
+        setMessage(active.message || active.content || active.title);
         setIsActive(active.is_active);
       }
     } catch (error) {
@@ -79,6 +87,8 @@ const BreakingNewsManager = () => {
         const { error } = await supabase
           .from('breaking_news')
           .update({ 
+            title: message.trim(),
+            content: message.trim(),
             message: message.trim(),
             is_active: isActive 
           })
@@ -90,6 +100,8 @@ const BreakingNewsManager = () => {
         const { error } = await supabase
           .from('breaking_news')
           .insert([{
+            title: message.trim(),
+            content: message.trim(),
             message: message.trim(),
             is_active: isActive
           }]);

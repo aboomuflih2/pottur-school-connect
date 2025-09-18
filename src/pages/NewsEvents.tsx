@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
+import { AdmissionsModal } from "@/components/admissions/AdmissionsModal";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ interface Comment {
 }
 
 const NewsEvents = () => {
+  const [isAdmissionsModalOpen, setIsAdmissionsModalOpen] = useState(false);
   const [newsArticles, setNewsArticles] = useState<NewsPost[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [galleryPhotos, setGalleryPhotos] = useState<GalleryPhoto[]>([]);
@@ -157,7 +159,7 @@ const NewsEvents = () => {
       return;
     }
 
-    const normalized = (data ?? []).map((row: any) => ({
+    const normalized = (data ?? []).map((row) => ({
       id: row.id,
       author_name: row.author_name,
       comment_text: row.comment_text ?? row.comment_content,
@@ -199,7 +201,7 @@ const NewsEvents = () => {
     }
 
     // Handle duplicate like or RLS errors gracefully
-    const msg = (error as any)?.message || "";
+    const msg = error instanceof Error ? error.message : "";
     if (msg.includes("unique") || msg.includes("duplicate") || msg.includes("23505")) {
       setIsLiked(true);
       await refreshLikeCount(articleId);
@@ -224,10 +226,11 @@ const NewsEvents = () => {
         author_name: newComment.name,
         author_email: newComment.email,
         comment_text: newComment.text,
-      } as any);
+      });
 
     // Fallback for older schema where column was 'comment_content'
-    if (error && ((error as any).message || "").includes("comment_text")) {
+    const errorMessage = error instanceof Error ? error.message : "";
+    if (error && errorMessage.includes("comment_text")) {
       const retry = await supabase
         .from("article_comments")
         .insert({
@@ -235,7 +238,7 @@ const NewsEvents = () => {
           author_name: newComment.name,
           author_email: newComment.email,
           comment_content: newComment.text,
-        } as any);
+        });
       error = retry.error;
     }
 
@@ -245,7 +248,7 @@ const NewsEvents = () => {
       // Refresh comments list to show newly added once approved (optional immediate refresh)
       fetchComments(selectedArticle.id);
     } else {
-      const msg = (error as any)?.message || "";
+      const msg = error instanceof Error ? error.message : "";
       if (msg.toLowerCase().includes("row-level security") || msg.toLowerCase().includes("permission")) {
         toast({ title: "Unable to submit comment", description: "Please sign in and try again.", variant: "destructive" });
       } else {
@@ -291,7 +294,7 @@ const NewsEvents = () => {
       </Helmet>
       
       <div className="min-h-screen">
-        <Header />
+        <Header onAdmissionsClick={() => setIsAdmissionsModalOpen(true)} />
         
         {/* Hero Section */}
         <section className="relative h-[400px] bg-gradient-to-r from-primary to-primary-foreground flex items-center justify-center">
@@ -579,6 +582,10 @@ const NewsEvents = () => {
         </Dialog>
 
         <Footer />
+        <AdmissionsModal 
+          isOpen={isAdmissionsModalOpen} 
+          onClose={() => setIsAdmissionsModalOpen(false)} 
+        />
       </div>
     </>
   );

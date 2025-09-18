@@ -23,9 +23,10 @@ const HeroSection = () => {
         .from('hero_slides')
         .select('*')
         .eq('is_active', true)
-        .order('display_order');
+        .order('order_index');
 
       if (error) throw error;
+      
       setSlides(data || []);
     } catch (error) {
       console.error('Error loading slides:', error);
@@ -33,24 +34,24 @@ const HeroSection = () => {
       setSlides([
         {
           id: '1',
-          slide_title: "Excellence in Education",
-          slide_subtitle: "Shaping Future Leaders at Modern Higher Secondary School, Pottur",
-          background_image: null,
+          title: "Excellence in Education",
+          subtitle: "Shaping Future Leaders at Modern Higher Secondary School, Pottur",
+          image_url: null,
           button_text: "Explore Academics",
-          button_link: "/academics",
-          display_order: 1,
+          button_url: "/academics",
+          order_index: 1,
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
         {
           id: '2',
-          slide_title: "Admissions Open 2024-25",
-          slide_subtitle: "Join Kerala's Premier Educational Institution - DHSE Code: 11181",
-          background_image: null,
+          title: "Admissions Open 2024-25",
+          subtitle: "Join Kerala's Premier Educational Institution - DHSE Code: 11181",
+          image_url: null,
           button_text: "Apply Now",
-          button_link: "/admissions",
-          display_order: 2,
+          button_url: "/admissions",
+          order_index: 2,
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -62,8 +63,8 @@ const HeroSection = () => {
   };
 
   const getSlideImage = (slide: DBHeroSlide, index: number) => {
-    if (slide.background_image) {
-      return slide.background_image;
+    if (slide.image_url) {
+      return slide.image_url;
     }
     // Fallback to default images
     return index % 2 === 0 ? heroImage : studentsImage;
@@ -122,7 +123,7 @@ const HeroSection = () => {
             <div className="absolute inset-0">
               <img
                 src={getSlideImage(slide, index)}
-                alt={slide.slide_title}
+                alt={slide.title}
                 className="w-full h-full object-cover"
                 loading={index === 0 ? "eager" : "lazy"}
               />
@@ -134,10 +135,10 @@ const HeroSection = () => {
               <div className="container mx-auto px-4">
                 <div className="max-w-3xl">
                   <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-white mb-6 leading-tight">
-                    {slide.slide_title}
+                    {slide.title}
                   </h1>
                   <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-8 leading-relaxed">
-                    {slide.slide_subtitle}
+                    {slide.subtitle}
                   </p>
                   <Button
                     size="lg"
