@@ -7,6 +7,7 @@ import AcademicPrograms from "@/components/AcademicPrograms";
 import CampusNews from "@/components/CampusNews";
 import ContactForm from "@/components/ContactForm";
 import Testimonials from "@/components/Testimonials";
+import JoinOurTeam from "@/components/JoinOurTeam";
 import Footer from "@/components/Footer";
 import { AdmissionsModal } from "@/components/admissions/AdmissionsModal";
 
@@ -22,6 +23,7 @@ const Index = () => {
       <CampusNews />
       <ContactForm />
       <Testimonials />
+      <JoinOurTeam />
       <Footer />
       <AdmissionsModal 
         isOpen={isAdmissionsModalOpen} 

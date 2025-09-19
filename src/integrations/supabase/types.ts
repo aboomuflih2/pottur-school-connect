@@ -30,6 +30,63 @@ export type Database = {
           subjects: string[] | null
           updated_at: string
         }
+      job_applications: {
+        Row: {
+          created_at: string
+          cv_file_name: string | null
+          cv_file_path: string | null
+          designation: string
+          district: string
+          email: string
+          id: string
+          mobile: string
+          name: string
+          pincode: string
+          place: string
+          post_office: string
+          specify_other: string | null
+          status: string
+          subject_specification: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cv_file_name?: string | null
+          cv_file_path?: string | null
+          designation: string
+          district: string
+          email: string
+          id?: string
+          mobile: string
+          name: string
+          pincode: string
+          place: string
+          post_office: string
+          specify_other?: string | null
+          status?: string
+          subject_specification?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cv_file_name?: string | null
+          cv_file_path?: string | null
+          designation?: string
+          district?: string
+          email?: string
+          id?: string
+          mobile?: string
+          name?: string
+          pincode?: string
+          place?: string
+          post_office?: string
+          specify_other?: string | null
+          status?: string
+          subject_specification?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
         Insert: {
           created_at?: string
           detailed_description?: string | null
@@ -842,6 +899,63 @@ export type Database = {
           rating?: number | null
           relation?: string
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      job_applications: {
+        Row: {
+          created_at: string
+          cv_file_name: string | null
+          cv_file_path: string | null
+          designation: string
+          district: string
+          email: string
+          id: string
+          mobile: string
+          name: string
+          pincode: string
+          place: string
+          post_office: string
+          specify_other: string | null
+          status: string
+          subject_specification: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cv_file_name?: string | null
+          cv_file_path?: string | null
+          designation: string
+          district: string
+          email: string
+          id?: string
+          mobile: string
+          name: string
+          pincode: string
+          place: string
+          post_office: string
+          specify_other?: string | null
+          status?: string
+          subject_specification?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cv_file_name?: string | null
+          cv_file_path?: string | null
+          designation?: string
+          district?: string
+          email?: string
+          id?: string
+          mobile?: string
+          name?: string
+          pincode?: string
+          place?: string
+          post_office?: string
+          specify_other?: string | null
+          status?: string
+          subject_specification?: string | null
           updated_at?: string
         }
         Relationships: []

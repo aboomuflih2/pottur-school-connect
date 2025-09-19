@@ -82,6 +82,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   const submissionItems = [
     { href: '/admin/contacts', label: 'Contact Messages', icon: Mail },
+    { href: '/admin/job-applications', label: 'Job Applications', icon: ClipboardList },
   ];
 
   return (

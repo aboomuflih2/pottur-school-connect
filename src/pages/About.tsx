@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import AboutHeroSection from "@/components/about/AboutHeroSection";
 import AboutLegacySection from "@/components/about/AboutLegacySection";
 import AboutMissionVision from "@/components/about/AboutMissionVision";
-import AboutLeadership from "@/components/about/AboutLeadership";
+import LeadershipSection from "@/components/LeadershipSection";
 import AboutTeamStats from "@/components/about/AboutTeamStats";
 import AboutFeatures from "@/components/about/AboutFeatures";
 import AboutTestimonials from "@/components/about/AboutTestimonials";
@@ -29,7 +29,7 @@ const About = () => {
         <AboutHeroSection />
         <AboutLegacySection />
         <AboutMissionVision />
-        <AboutLeadership />
+        <LeadershipSection />
         <AboutTeamStats />
         <AboutFeatures />
         <AboutTestimonials />

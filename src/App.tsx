@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Careers from "./pages/Careers";
 import Academics from "./pages/Academics";
 import NewsEvents from "./pages/NewsEvents";
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,7 @@ import GalleryManager from "./pages/admin/GalleryManager";
 import SocialLinksManager from "./pages/admin/SocialLinksManager";
 import AdmissionForms from "./pages/admin/AdmissionForms";
 import AdmissionApplications from "./pages/admin/AdmissionApplications";
+import JobApplications from "./pages/admin/JobApplications";
 import InterviewSettings from "./pages/admin/InterviewSettings";
 import ApplicationDetail from "./pages/admin/ApplicationDetail";
 import { KGStdApplicationForm } from "./components/admissions/KGStdApplicationForm";
@@ -52,6 +54,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/careers" element={<Careers />} />
             <Route path="/academics" element={<Academics />} />
             <Route path="/news-events" element={<NewsEvents />} />
             <Route path="/news" element={<NewsEvents />} />
@@ -87,6 +90,7 @@ const App = () => (
                   <Route path="social-links" element={<SocialLinksManager />} />
                   <Route path="admission-forms" element={<AdmissionForms />} />
                   <Route path="admission-applications" element={<AdmissionApplications />} />
+                  <Route path="job-applications" element={<JobApplications />} />
                   <Route path="interview-settings" element={<InterviewSettings />} />
                   <Route path="applications/:type/:id" element={<ApplicationDetail />} />
                   <Route index element={<AdminDashboard />} />
