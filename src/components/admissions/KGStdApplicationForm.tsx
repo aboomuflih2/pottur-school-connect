@@ -111,7 +111,7 @@ export function KGStdApplicationForm() {
             mobile_number: data.mobileNumber,
           }]);
         if (!error) {
-          navigate(`/admissions/success?type=kg-std&app=${applicationNumber}`);
+          navigate(`/admissions/success?type=kg-std&app=${encodeURIComponent(applicationNumber)}`);
           return;
         }
         lastError = error;
@@ -138,7 +138,7 @@ export function KGStdApplicationForm() {
               previous_school: data.previousSchool || null,
             }]);
           if (!legacyError) {
-            navigate(`/admissions/success?type=kg-std&app=${applicationNumber}`);
+            navigate(`/admissions/success?type=kg-std&app=${encodeURIComponent(applicationNumber)}`);
             return;
           }
           lastError = legacyError;

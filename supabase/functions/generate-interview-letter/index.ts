@@ -16,30 +16,41 @@ serve(async (req) => {
   }
 
   try {
-    const { applicationNumber, applicationType } = await req.json();
+    const { applicationNumber, applicationType, mobileNumber } = await req.json();
     console.log('Request data:', { applicationNumber, applicationType });
 
-    if (!applicationNumber || !applicationType) {
+    if (!applicationNumber || !applicationType || !mobileNumber) {
       console.error('Missing required parameters');
       return new Response(
-        JSON.stringify({ error: 'Application number and type are required' }),
+        JSON.stringify({ error: 'Application number, type, and mobile number are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fetch application data
     const tableName = applicationType === 'kg_std' ? 'kg_std_applications' : 'plus_one_applications';
     console.log('Fetching from table:', tableName);
 
+    const sanitizedApplicationNumber = String(applicationNumber).trim();
+    const sanitizedMobileNumber = String(mobileNumber).trim();
+
+    if (!sanitizedApplicationNumber || !sanitizedMobileNumber) {
+      return new Response(
+        JSON.stringify({ error: 'Application number, type, and mobile number are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { data: application, error } = await supabase
       .from(tableName)
       .select('*')
-      .eq('application_number', applicationNumber)
+      .eq('application_number', sanitizedApplicationNumber)
+      .eq('mobile_number', sanitizedMobileNumber)
       .single();
 
     if (error || !application) {
@@ -242,7 +253,6 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         htmlContent,
-        applicationData: application,
         filename: `Interview_Call_Letter_${applicationNumber}.pdf`
       }),
       {

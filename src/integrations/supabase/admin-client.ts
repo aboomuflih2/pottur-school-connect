@@ -1,18 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+import { supabase } from './client';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-
-// Admin client with service role key for admin operations
-// This bypasses RLS policies and should only be used for admin functions
-export const adminSupabase = createClient<Database>(
-  SUPABASE_URL, 
-  SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+// Admin operations use the regular browser client and rely on RLS policies (is_admin()).
+// Service role keys must never be bundled with the client.
+export const adminSupabase = supabase;

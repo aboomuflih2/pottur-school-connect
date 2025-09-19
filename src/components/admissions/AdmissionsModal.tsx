@@ -92,7 +92,7 @@ export function AdmissionsModal({ isOpen, onClose }: AdmissionsModalProps) {
     }
 
     onClose();
-    navigate(`/admissions/track?app=${trackingData.applicationNumber}&mobile=${trackingData.mobileNumber}`);
+    navigate(`/admissions/track?app=${encodeURIComponent(trackingData.applicationNumber)}&mobile=${encodeURIComponent(trackingData.mobileNumber)}`);
   };
 
   return (

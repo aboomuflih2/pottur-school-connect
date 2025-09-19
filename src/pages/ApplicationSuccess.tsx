@@ -13,6 +13,7 @@ export function ApplicationSuccess() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const applicationNumber = searchParams.get("app");
   const applicationType = searchParams.get("type");
+  const mobileNumber = searchParams.get("mobile");
   const [academicYear, setAcademicYear] = useState<string>("");
 
   useEffect(() => {
@@ -30,12 +31,12 @@ export function ApplicationSuccess() {
   }, [applicationType]);
 
   const downloadApplicationPDF = async () => {
-    if (!applicationNumber || !applicationType) return;
+    if (!applicationNumber || !applicationType || !mobileNumber) return;
 
     setDownloadingPdf(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-application-pdf', {
-        body: { applicationNumber, applicationType }
+        body: { applicationNumber, applicationType, mobileNumber }
       });
 
       if (error) throw error;
@@ -71,7 +72,7 @@ export function ApplicationSuccess() {
 
   useEffect(() => {
     // Redirect if no application number
-    if (!applicationNumber || !applicationType) {
+    if (!applicationNumber || !applicationType || !mobileNumber) {
       navigate("/");
       return;
     }
@@ -84,7 +85,7 @@ export function ApplicationSuccess() {
     return () => clearTimeout(timer);
   }, [applicationNumber, applicationType, navigate]);
 
-  if (!applicationNumber || !applicationType) {
+  if (!applicationNumber || !applicationType || !mobileNumber) {
     return null;
   }
 
@@ -164,7 +165,7 @@ export function ApplicationSuccess() {
               </Button>
               
               <Button
-                onClick={() => navigate(`/admissions/track?app=${applicationNumber}&mobile=`)}
+                onClick={() => navigate(`/admissions/track?app=${encodeURIComponent(applicationNumber)}&mobile=${encodeURIComponent(mobileNumber)}`)}
                 className="flex-1"
               >
                 Track Application

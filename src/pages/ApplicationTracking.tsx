@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ApplicationData {
+  [key: string]: unknown;
   id: string;
   application_number: string;
   full_name: string;
@@ -21,13 +22,10 @@ interface ApplicationData {
 }
 
 interface InterviewMark {
-  id: string;
-  application_id: string;
-  application_type: string;
   subject_name: string;
-  marks_obtained: number;
-  total_marks: number;
-  created_at: string;
+  marks_obtained: number | null;
+  max_marks: number | null;
+  display_order?: number | null;
 }
 
 const statusSteps = [
@@ -49,33 +47,12 @@ export function ApplicationTracking() {
   const [academicYear, setAcademicYear] = useState<string>("");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [interviewMarks, setInterviewMarks] = useState<InterviewMark[]>([]);
-  const [loadingMarks, setLoadingMarks] = useState(false);
 
   const applicationNumber = searchParams.get("app");
   const mobileNumber = searchParams.get("mobile");
-
-  const fetchInterviewMarks = async (appId: string, appType: string) => {
-    setLoadingMarks(true);
-    try {
-      const { data: marks, error } = await supabase
-        .from('interview_subjects')
-        .select('*')
-        .eq('application_id', appId)
-        .eq('application_type', appType)
-        .order('subject_name');
-
-      if (error) {
-        console.error('Error fetching interview marks:', error);
-        return;
-      }
-
-      setInterviewMarks(marks || []);
-    } catch (error) {
-      console.error('Error in fetchInterviewMarks:', error);
-    } finally {
-      setLoadingMarks(false);
-    }
-  };
+  const totalMarks = interviewMarks.reduce((sum, mark) => sum + (mark.marks_obtained ?? 0), 0);
+  const totalMaxMarks = interviewMarks.reduce((sum, mark) => sum + (mark.max_marks ?? 0), 0);
+  const overallPercentage = totalMaxMarks > 0 ? Math.round((totalMarks / totalMaxMarks) * 100) : 0;
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -83,7 +60,7 @@ export function ApplicationTracking() {
         toast({
           title: "Invalid Parameters",
           description: "Application number and mobile number are required",
-          variant: "destructive"
+          variant: "destructive",
         });
         navigate("/");
         return;
@@ -91,63 +68,57 @@ export function ApplicationTracking() {
 
       setLoading(true);
       try {
-        // Try KG STD first
-        const { data: kgStdData, error: kgStdError } = await supabase
-          .from('kg_std_applications')
-          .select('*')
-          .eq('application_number', applicationNumber)
-          .eq('mobile_number', mobileNumber)
-          .single();
-
-        if (kgStdData && !kgStdError) {
-          setApplication(kgStdData);
-          setApplicationType("kg_std");
-          const { data: form } = await supabase
-            .from('admission_forms')
-            .select('academic_year')
-            .eq('form_type', 'kg_std')
-            .maybeSingle();
-          if (form?.academic_year) setAcademicYear(form.academic_year);
-          // Fetch interview marks for this application
-          await fetchInterviewMarks(kgStdData.id, "kg_std");
-          return;
-        }
-
-        // Try Plus One
-        const { data: plusOneData, error: plusOneError } = await supabase
-          .from('plus_one_applications')
-          .select('*')
-          .eq('application_number', applicationNumber)
-          .eq('mobile_number', mobileNumber)
-          .single();
-
-        if (plusOneData && !plusOneError) {
-          setApplication(plusOneData);
-          setApplicationType("plus_one");
-          const { data: form } = await supabase
-            .from('admission_forms')
-            .select('academic_year')
-            .eq('form_type', 'plus_one')
-            .maybeSingle();
-          if (form?.academic_year) setAcademicYear(form.academic_year);
-          // Fetch interview marks for this application
-          await fetchInterviewMarks(plusOneData.id, "plus_one");
-          return;
-        }
-
-        // No application found
-        toast({
-          title: "Application Not Found",
-          description: "No application found with the provided details",
-          variant: "destructive"
+        const { data, error } = await supabase.functions.invoke('get-application-status', {
+          body: { applicationNumber, mobileNumber },
         });
-        navigate("/");
+
+        if (error) {
+          throw new Error(error.message ?? "Failed to load application");
+        }
+
+        const payload = (data ?? {}) as {
+          application?: ApplicationData;
+          applicationType?: string;
+          academicYear?: string | null;
+          interviewMarks?: InterviewMark[];
+          error?: string;
+        };
+
+        if (payload.error) {
+          throw new Error(payload.error);
+        }
+
+        if (!payload.application) {
+          throw new Error("Application not found");
+        }
+
+        setApplication(payload.application);
+
+        if (payload.applicationType === "kg_std" || payload.applicationType === "plus_one") {
+          setApplicationType(payload.applicationType);
+        } else {
+          setApplicationType(null);
+        }
+
+        if (typeof payload.academicYear === "string") {
+          setAcademicYear(payload.academicYear);
+        } else {
+          setAcademicYear("");
+        }
+
+        setInterviewMarks(
+          Array.isArray(payload.interviewMarks)
+            ? (payload.interviewMarks as InterviewMark[])
+            : []
+        );
       } catch (error) {
         console.error("Error fetching application:", error);
+        const message =
+          error instanceof Error ? error.message : "Failed to fetch application details";
         toast({
           title: "Error",
-          description: "Failed to fetch application details",
-          variant: "destructive"
+          description: message,
+          variant: "destructive",
         });
         navigate("/");
       } finally {
@@ -159,14 +130,15 @@ export function ApplicationTracking() {
   }, [applicationNumber, mobileNumber, navigate, toast]);
 
   const downloadApplicationPDF = async () => {
-    if (!application || !applicationType) return;
+    if (!application || !applicationType || !mobileNumber) return;
 
     setDownloadingPdf(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-application-pdf', {
-        body: { 
-          applicationNumber: application.application_number, 
-          applicationType 
+        body: {
+          applicationNumber: application.application_number,
+          applicationType,
+          mobileNumber
         }
       });
 
@@ -203,7 +175,7 @@ export function ApplicationTracking() {
 
   const downloadInterviewLetter = async () => {
     console.log('Download interview letter clicked!');
-    if (!application || !applicationType) {
+    if (!application || !applicationType || !mobileNumber) {
       console.log('Missing application or type:', { application: !!application, applicationType });
       return;
     }
@@ -217,9 +189,10 @@ export function ApplicationTracking() {
       });
 
       const { data, error } = await supabase.functions.invoke('generate-interview-letter', {
-        body: { 
-          applicationNumber: application.application_number, 
-          applicationType 
+        body: {
+          applicationNumber: application.application_number,
+          applicationType,
+          mobileNumber
         }
       });
 
@@ -263,7 +236,7 @@ export function ApplicationTracking() {
   };
 
   const downloadMarkList = async () => {
-    if (!application || !applicationType) return;
+    if (!application || !applicationType || !mobileNumber) return;
 
     setDownloadingPdf(true);
     try {
@@ -273,9 +246,10 @@ export function ApplicationTracking() {
       });
 
       const { data, error } = await supabase.functions.invoke('generate-mark-list', {
-        body: { 
-          applicationNumber: application.application_number, 
-          applicationType 
+        body: {
+          applicationNumber: application.application_number,
+          applicationType,
+          mobileNumber
         }
       });
 
@@ -478,42 +452,48 @@ export function ApplicationTracking() {
                   <CardDescription>Your interview performance results</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {loadingMarks ? (
-                    <div className="flex items-center justify-center py-4">
-                      <div className="text-muted-foreground">Loading marks...</div>
-                    </div>
-                  ) : (
+                  {interviewMarks.length > 0 ? (
                     <div className="space-y-3">
-                      {interviewMarks.map((mark, index) => (
-                        <div key={index} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                          <div>
-                            <p className="font-medium">{mark.subject_name}</p>
-                            <p className="text-sm text-muted-foreground">Subject</p>
+                      {interviewMarks.map((mark, index) => {
+                        const marks = mark.marks_obtained ?? 0;
+                        const maxMarks = mark.max_marks ?? 0;
+                        const percentage = maxMarks > 0 ? Math.round((marks / maxMarks) * 100) : 0;
+
+                        return (
+                          <div
+                            key={`${mark.subject_name}-${index}`}
+                            className="flex justify-between items-center p-3 bg-muted/50 rounded-lg"
+                          >
+                            <div>
+                              <p className="font-medium">{mark.subject_name}</p>
+                              <p className="text-sm text-muted-foreground">Subject</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-lg">
+                                {marks} / {maxMarks}
+                              </p>
+                              <p className="text-sm text-muted-foreground">{percentage}%</p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-lg">
-                              {mark.marks} / {mark.max_marks}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {Math.round((mark.marks / mark.max_marks) * 100)}%
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
+
                       <div className="mt-4 p-3 bg-primary/10 rounded-lg">
                         <div className="flex justify-between items-center">
                           <span className="font-medium">Total Score:</span>
                           <span className="font-bold text-lg">
-                            {interviewMarks.reduce((sum, mark) => sum + mark.marks, 0)} / {interviewMarks.reduce((sum, mark) => sum + mark.max_marks, 0)}
+                            {totalMarks} / {totalMaxMarks}
                           </span>
                         </div>
                         <div className="flex justify-between items-center mt-1">
                           <span className="text-sm text-muted-foreground">Overall Percentage:</span>
-                          <span className="font-medium">
-                            {Math.round((interviewMarks.reduce((sum, mark) => sum + mark.marks, 0) / interviewMarks.reduce((sum, mark) => sum + mark.max_marks, 0)) * 100)}%
-                          </span>
+                          <span className="font-medium">{overallPercentage}%</span>
                         </div>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Interview marks are not available yet.
                     </div>
                   )}
                 </CardContent>
