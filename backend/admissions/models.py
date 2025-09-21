@@ -4,6 +4,15 @@ import uuid
 
 User = get_user_model()
 
+class AdmissionForm(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    form_type = models.CharField(max_length=50, unique=True, choices=[('kg_std', 'KG & STD'), ('plus_one', '+1 / HSS')])
+    is_active = models.BooleanField(default=False)
+    academic_year = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.get_form_type_display()
+
 class KgStdApplication(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     student_name = models.CharField(max_length=255)

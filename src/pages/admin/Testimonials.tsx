@@ -1,107 +1,75 @@
-import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, Check, X, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { djangoAPI } from "@/lib/django-api";
 import { useToast } from "@/hooks/use-toast";
 
 interface Testimonial {
   id: string;
-  person_name: string;
-  relation: string;
-  quote: string;
+  name: string;
+  designation: string;
+  content: string;
   rating: number;
   status: string;
-  photo?: string;
+  photo_url?: string;
   created_at: string;
   is_active: boolean;
 }
 
 const TestimonialsManager = () => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
 
-  useEffect(() => {
-    loadTestimonials();
-  }, []);
+    const { data: testimonials = [], isLoading } = useQuery<Testimonial[], Error>({
+      queryKey: ['testimonials'],
+      queryFn: async () => {
+        // @ts-ignore
+        const response = await djangoAPI.getTestimonials();
+        // @ts-ignore
+        return response.results;
+      },
+    });
 
-  const loadTestimonials = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('testimonials')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const mutationOptions = {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['testimonials'] });
+      },
+      onError: (error: Error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    };
 
-      if (error) throw error;
+    const updateStatusMutation = useMutation({
+      mutationFn: ({ id, status }: { id: string, status: string }) => djangoAPI.updateTestimonial(id, { status }),
+      ...mutationOptions,
+      onSuccess: () => {
+          toast({
+              title: "Success",
+              description: `Testimonial status updated`,
+            });
+          mutationOptions.onSuccess();
+      }
+    });
 
-      setTestimonials(data || []);
-    } catch (error) {
-      console.error('Error loading testimonials:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load testimonials",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateTestimonialStatus = async (id: string, status: string) => {
-    try {
-      const { error } = await supabase
-        .from('testimonials')
-        .update({ status })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setTestimonials(testimonials.map(t => 
-        t.id === id ? { ...t, status } : t
-      ));
-
-      toast({
-        title: "Success",
-        description: `Testimonial ${status}`,
-      });
-    } catch (error) {
-      console.error('Error updating testimonial:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update testimonial status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteTestimonial = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('testimonials')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setTestimonials(testimonials.filter(t => t.id !== id));
-
-      toast({
-        title: "Success",
-        description: "Testimonial deleted",
-      });
-    } catch (error) {
-      console.error('Error deleting testimonial:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete testimonial",
-        variant: "destructive",
-      });
-    }
-  };
+    const deleteMutation = useMutation({
+      mutationFn: (id: string) => djangoAPI.deleteTestimonial(id),
+      ...mutationOptions,
+      onSuccess: () => {
+          toast({
+              title: "Success",
+              description: "Testimonial deleted",
+            });
+          mutationOptions.onSuccess();
+      }
+    });
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -140,7 +108,7 @@ const TestimonialsManager = () => {
   const approvedTestimonials = testimonials.filter(t => t.status === 'approved');
   const rejectedTestimonials = testimonials.filter(t => t.status === 'rejected');
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -190,14 +158,14 @@ const TestimonialsManager = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <Avatar className="w-10 h-10">
-                          <AvatarImage src={testimonial.photo} alt={testimonial.person_name} />
+                          <AvatarImage src={testimonial.photo_url} alt={testimonial.name} />
                           <AvatarFallback className="bg-primary/10 text-primary">
-                            {getInitials(testimonial.person_name)}
+                            {getInitials(testimonial.name)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <CardTitle className="text-lg">{testimonial.person_name}</CardTitle>
-                          <CardDescription>{testimonial.relation}</CardDescription>
+                          <CardTitle className="text-lg">{testimonial.name}</CardTitle>
+                          <CardDescription>{testimonial.designation}</CardDescription>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -210,7 +178,7 @@ const TestimonialsManager = () => {
                   </CardHeader>
                   <CardContent>
                     <blockquote className="text-foreground/80 leading-relaxed italic mb-4">
-                      "{testimonial.quote}"
+                      "{testimonial.content}"
                     </blockquote>
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">
@@ -219,7 +187,7 @@ const TestimonialsManager = () => {
                       <div className="flex space-x-2">
                         <Button
                           size="sm"
-                          onClick={() => updateTestimonialStatus(testimonial.id, 'approved')}
+                          onClick={() => updateStatusMutation.mutate({ id: testimonial.id, status: 'approved' })}
                           className="bg-green-600 hover:bg-green-700"
                         >
                           <Check className="h-4 w-4 mr-1" />
@@ -228,7 +196,7 @@ const TestimonialsManager = () => {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => updateTestimonialStatus(testimonial.id, 'rejected')}
+                          onClick={() => updateStatusMutation.mutate({ id: testimonial.id, status: 'rejected' })}
                         >
                           <X className="h-4 w-4 mr-1" />
                           Reject
@@ -257,14 +225,14 @@ const TestimonialsManager = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <Avatar className="w-10 h-10">
-                          <AvatarImage src={testimonial.photo} alt={testimonial.person_name} />
+                          <AvatarImage src={testimonial.photo_url} alt={testimonial.name} />
                           <AvatarFallback className="bg-primary/10 text-primary">
-                            {getInitials(testimonial.person_name)}
+                            {getInitials(testimonial.name)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <CardTitle className="text-lg">{testimonial.person_name}</CardTitle>
-                          <CardDescription>{testimonial.relation}</CardDescription>
+                          <CardTitle className="text-lg">{testimonial.name}</CardTitle>
+                          <CardDescription>{testimonial.designation}</CardDescription>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -277,7 +245,7 @@ const TestimonialsManager = () => {
                   </CardHeader>
                   <CardContent>
                     <blockquote className="text-foreground/80 leading-relaxed italic mb-4">
-                      "{testimonial.quote}"
+                      "{testimonial.content}"
                     </blockquote>
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">
@@ -287,14 +255,14 @@ const TestimonialsManager = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => updateTestimonialStatus(testimonial.id, 'pending')}
+                          onClick={() => updateStatusMutation.mutate({ id: testimonial.id, status: 'pending' })}
                         >
                           Move to Pending
                         </Button>
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => deleteTestimonial(testimonial.id)}
+                          onClick={() => deleteMutation.mutate(testimonial.id)}
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
                           Delete
@@ -323,14 +291,14 @@ const TestimonialsManager = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <Avatar className="w-10 h-10">
-                          <AvatarImage src={testimonial.photo} alt={testimonial.person_name} />
+                          <AvatarImage src={testimonial.photo_url} alt={testimonial.name} />
                           <AvatarFallback className="bg-primary/10 text-primary">
-                            {getInitials(testimonial.person_name)}
+                            {getInitials(testimonial.name)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <CardTitle className="text-lg">{testimonial.person_name}</CardTitle>
-                          <CardDescription>{testimonial.relation}</CardDescription>
+                          <CardTitle className="text-lg">{testimonial.name}</CardTitle>
+                          <CardDescription>{testimonial.designation}</CardDescription>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -343,7 +311,7 @@ const TestimonialsManager = () => {
                   </CardHeader>
                   <CardContent>
                     <blockquote className="text-foreground/80 leading-relaxed italic mb-4">
-                      "{testimonial.quote}"
+                      "{testimonial.content}"
                     </blockquote>
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">
@@ -353,14 +321,14 @@ const TestimonialsManager = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => updateTestimonialStatus(testimonial.id, 'pending')}
+                          onClick={() => updateStatusMutation.mutate({ id: testimonial.id, status: 'pending' })}
                         >
                           Move to Pending
                         </Button>
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => deleteTestimonial(testimonial.id)}
+                          onClick={() => deleteMutation.mutate(testimonial.id)}
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
                           Delete

@@ -73,80 +73,84 @@ const queryClient = new QueryClient({
   },
 });
 
+import { AuthProvider } from "./hooks/useAuth";
+
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense
-            fallback={
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            }
-          >
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/academics" element={<Academics />} />
-              <Route path="/news-events" element={<NewsEvents />} />
-              <Route path="/news" element={<NewsEvents />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/test-auth" element={<TestAuth />} />
-            
-              {/* Admission Routes */}
-              <Route path="/admissions/apply/kg-std" element={<KGStdApplicationForm />} />
-              <Route path="/admissions/apply/plus-one" element={<PlusOneApplicationForm />} />
-              <Route path="/admissions/success" element={<ApplicationSuccess />} />
-              <Route path="/admissions/track" element={<ApplicationTracking />} />
-          
-            {/* Admin Routes */}
-            <Route
-              path="/admin/*"
-              element={
-                <AdminRoute>
-                  <AdminLayout>
-                    <Routes>
-                      <Route path="dashboard" element={<AdminDashboard />} />
-                      <Route path="hero-slides" element={<HeroSlidesManager />} />
-                      <Route path="breaking-news" element={<BreakingNewsManager />} />
-                      <Route path="contacts" element={<ContactsManager />} />
-                      <Route path="contact-page" element={<ContactPageManager />} />
-                      <Route path="about" element={<AboutPageManager />} />
-                      <Route path="board-members" element={<BoardMembersManager />} />
-                      <Route path="leadership-messages" element={<LeadershipMessagesManager />} />
-                      <Route path="school-features" element={<SchoolFeaturesManager />} />
-                      <Route path="school-stats" element={<SchoolStats />} />
-                      <Route path="testimonials" element={<TestimonialsManager />} />
-                      <Route path="academics" element={<AdminAcademics />} />
-                      <Route path="academics/new" element={<AcademicProgramNew />} />
-                      <Route path="academics/:id/edit" element={<AcademicProgramEdit />} />
-                      <Route path="news" element={<NewsManager />} />
-                      <Route path="events" element={<EventsManager />} />
-                      <Route path="gallery" element={<GalleryManager />} />
-                      <Route path="social-links" element={<SocialLinksManager />} />
-                      <Route path="admission-forms" element={<AdmissionForms />} />
-                      <Route path="admission-applications" element={<AdmissionApplications />} />
-                      <Route path="job-applications" element={<JobApplications />} />
-                      <Route path="interview-settings" element={<InterviewSettings />} />
-                      <Route path="applications/:type/:id" element={<ApplicationDetail />} />
-                      <Route index element={<AdminDashboard />} />
-                    </Routes>
-                  </AdminLayout>
-                </AdminRoute>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Suspense
+              fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
               }
-            />
-          
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
+            >
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/careers" element={<Careers />} />
+                <Route path="/academics" element={<Academics />} />
+                <Route path="/news-events" element={<NewsEvents />} />
+                <Route path="/news" element={<NewsEvents />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/test-auth" element={<TestAuth />} />
+
+                {/* Admission Routes */}
+                <Route path="/admissions/apply/kg-std" element={<KGStdApplicationForm />} />
+                <Route path="/admissions/apply/plus-one" element={<PlusOneApplicationForm />} />
+                <Route path="/admissions/success" element={<ApplicationSuccess />} />
+                <Route path="/admissions/track" element={<ApplicationTracking />} />
+
+              {/* Admin Routes */}
+              <Route
+                path="/admin/*"
+                element={
+                  <AdminRoute>
+                    <AdminLayout>
+                      <Routes>
+                        <Route path="dashboard" element={<AdminDashboard />} />
+                        <Route path="hero-slides" element={<HeroSlidesManager />} />
+                        <Route path="breaking-news" element={<BreakingNewsManager />} />
+                        <Route path="contacts" element={<ContactsManager />} />
+                        <Route path="contact-page" element={<ContactPageManager />} />
+                        <Route path="about" element={<AboutPageManager />} />
+                        <Route path="board-members" element={<BoardMembersManager />} />
+                        <Route path="leadership-messages" element={<LeadershipMessagesManager />} />
+                        <Route path="school-features" element={<SchoolFeaturesManager />} />
+                        <Route path="school-stats" element={<SchoolStats />} />
+                        <Route path="testimonials" element={<TestimonialsManager />} />
+                        <Route path="academics" element={<AdminAcademics />} />
+                        <Route path="academics/new" element={<AcademicProgramNew />} />
+                        <Route path="academics/:id/edit" element={<AcademicProgramEdit />} />
+                        <Route path="news" element={<NewsManager />} />
+                        <Route path="events" element={<EventsManager />} />
+                        <Route path="gallery" element={<GalleryManager />} />
+                        <Route path="social-links" element={<SocialLinksManager />} />
+                        <Route path="admission-forms" element={<AdmissionForms />} />
+                        <Route path="admission-applications" element={<AdmissionApplications />} />
+                        <Route path="job-applications" element={<JobApplications />} />
+                        <Route path="interview-settings" element={<InterviewSettings />} />
+                        <Route path="applications/:type/:id" element={<ApplicationDetail />} />
+                        <Route index element={<AdminDashboard />} />
+                      </Routes>
+                    </AdminLayout>
+                  </AdminRoute>
+                }
+              />
+
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>
 );

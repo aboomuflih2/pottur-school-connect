@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { djangoAPI } from '@/lib/django-api';
 import { toast } from 'sonner';
 import { AcademicProgram, ProgramFormData, ImageUploadResponse } from '../../types/academic';
 import AcademicProgramsGrid from '../../components/admin/AcademicProgramsGrid';
 import ActionToolbar from '../../components/admin/ActionToolbar';
 import ProgramForm from '../../components/admin/ProgramForm';
 import { EyeIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { uploadImage } from '@/utils/imageUpload';
 
 interface FilterOptions {
   category: string;
@@ -14,50 +16,65 @@ interface FilterOptions {
 }
 
 export default function Academics() {
-  const [programs, setPrograms] = useState<AcademicProgram[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingProgram, setEditingProgram] = useState<AcademicProgram | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [viewingProgram, setViewingProgram] = useState<AcademicProgram | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [filters, setFilters] = useState<FilterOptions>({
-    category: '',
-    status: '',
-    search: ''
-  });
+    const queryClient = useQueryClient();
+    const [editingProgram, setEditingProgram] = useState<AcademicProgram | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [viewingProgram, setViewingProgram] = useState<AcademicProgram | null>(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [filters, setFilters] = useState<FilterOptions>({
+        category: '',
+        status: '',
+        search: ''
+      });
 
-  useEffect(() => {
-    fetchPrograms();
-  }, []);
+    const { data: programs = [], isLoading } = useQuery<AcademicProgram[], Error>({
+        queryKey: ['academicPrograms'],
+        queryFn: async () => {
+            // @ts-ignore
+            const response = await djangoAPI.getPrograms();
+            // @ts-ignore
+            return response.results;
+        },
+    });
 
-  const fetchPrograms = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('academic_programs')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const mutationOptions = {
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['academicPrograms'] });
+            setIsFormOpen(false);
+            setEditingProgram(null);
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    };
 
-      if (error) throw error;
+    const createMutation = useMutation({
+        mutationFn: (programData: any) => djangoAPI.createProgram(programData),
+        ...mutationOptions,
+    });
 
-      setPrograms(data || []);
-    } catch (error) {
-      console.error('Error fetching programs:', error);
-      toast.error('Failed to load academic programs');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const updateMutation = useMutation({
+        mutationFn: (programData: any) => djangoAPI.updateProgram(editingProgram!.id, programData),
+        ...mutationOptions,
+    });
 
-  // Filter programs based on current filters
+    const deleteMutation = useMutation({
+        mutationFn: (programId: string) => djangoAPI.deleteProgram(programId),
+        ...mutationOptions,
+    });
+
+    const toggleStatusMutation = useMutation({
+        mutationFn: ({ programId, is_active }: { programId: string, is_active: boolean }) => djangoAPI.updateProgram(programId, { is_active }),
+        ...mutationOptions,
+    });
+
   const filteredPrograms = useMemo(() => {
     return programs.filter(program => {
       const matchesSearch = !filters.search || 
-        program.program_title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        program.short_description.toLowerCase().includes(filters.search.toLowerCase());
+        program.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        program.description.toLowerCase().includes(filters.search.toLowerCase());
       
-      const matchesCategory = !filters.category || program.category === filters.category;
+      const matchesCategory = !filters.category || program.program_type === filters.category;
       
       const matchesStatus = !filters.status || 
         (filters.status === 'active' && program.is_active) ||
@@ -67,126 +84,37 @@ export default function Academics() {
     });
   }, [programs, filters]);
 
-  // Navigation to new page is handled directly in the toolbar component
-
-  // Navigation to edit page is handled directly in the grid component
-
   const handleView = (program: AcademicProgram) => {
     setViewingProgram(program);
     setIsViewModalOpen(true);
   };
 
-  const handleDelete = async (programId: string) => {
-    try {
-      const { error } = await supabase
-        .from('academic_programs')
-        .delete()
-        .eq('id', programId);
-
-      if (error) throw error;
-
-      toast.success('Program deleted successfully');
-      fetchPrograms();
-    } catch (error) {
-      console.error('Error deleting program:', error);
-      toast.error('Failed to delete program');
-    }
-  };
-
-  const handleToggleStatus = async (programId: string, isActive: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('academic_programs')
-        .update({ is_active: isActive })
-        .eq('id', programId);
-
-      if (error) throw error;
-
-      toast.success(`Program ${isActive ? 'activated' : 'deactivated'} successfully`);
-      fetchPrograms();
-    } catch (error) {
-      console.error('Error updating program status:', error);
-      toast.error('Failed to update program status');
-    }
-  };
-
-  const handleImageUpload = async (file: File): Promise<ImageUploadResponse> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `academic-programs/${fileName}`;
-
-    try {
-      const { error: uploadError } = await supabase.storage
-        .from('program-icons')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('program-icons')
-        .getPublicUrl(filePath);
-
-      return {
-        url: publicUrl,
-        path: filePath,
-        size: file.size,
-        type: file.type
-      };
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw new Error('Failed to upload image');
-    }
-  };
-
   const handleFormSubmit = async (data: ProgramFormData) => {
     try {
-      setSubmitting(true);
+        let imageUrl = editingProgram?.main_image || null;
       
-      let imageUrl = editingProgram?.main_image || null;
-      
-      // Upload new image if provided
-      if (data.image_file) {
-        const uploadResult = await handleImageUpload(data.image_file);
-        imageUrl = uploadResult.url;
+        if (data.image_file) {
+          const uploadResult = await uploadImage(data.image_file);
+          imageUrl = uploadResult.url;
+        }
+
+        const programData = {
+          name: data.program_title,
+          description: data.full_description,
+          program_type: data.category,
+          is_active: data.is_active,
+          main_image: imageUrl
+        };
+
+        if (editingProgram) {
+          updateMutation.mutate(programData);
+        } else {
+          createMutation.mutate(programData);
+        }
+
+      } catch (error) {
+        toast.error('Failed to save program');
       }
-
-      const programData = {
-        program_title: data.program_title,
-        short_description: data.short_description,
-        full_description: data.full_description,
-        category: data.category,
-        is_active: data.is_active,
-        main_image: imageUrl
-      };
-
-      if (editingProgram) {
-        // Update existing program
-        const { error } = await supabase
-          .from('academic_programs')
-          .update(programData)
-          .eq('id', editingProgram.id);
-
-        if (error) throw error;
-        toast.success('Program updated successfully');
-      } else {
-        // Create new program
-        const { error } = await supabase
-          .from('academic_programs')
-          .insert([programData]);
-
-        if (error) throw error;
-        toast.success('Program created successfully');
-      }
-
-      setIsFormOpen(false);
-      setEditingProgram(null);
-      fetchPrograms();
-    } catch (error) {
-      console.error('Error saving program:', error);
-      throw error;
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   const handleFormCancel = () => {
@@ -196,14 +124,6 @@ export default function Academics() {
 
   const handleFilterChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
-  };
-
-  const updateField = (field: keyof AcademicProgram, value: AcademicProgram[keyof AcademicProgram]) => {
-    if (!editingProgram) return;
-    setEditingProgram({
-      ...editingProgram,
-      [field]: value,
-    });
   };
 
   const formatDate = (dateString: string) => {
@@ -216,7 +136,7 @@ export default function Academics() {
     });
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white border-b border-gray-200 px-6 py-4">
@@ -256,18 +176,21 @@ export default function Academics() {
             onFilterChange={handleFilterChange}
             totalCount={programs.length}
             filteredCount={filteredPrograms.length}
-            isLoading={loading}
+            isLoading={isLoading}
           />
 
       {/* Main Content */}
       <div className="p-6">
         <AcademicProgramsGrid
           programs={filteredPrograms}
-          onEdit={undefined}
-          onDelete={handleDelete}
+          onEdit={(program) => {
+            setEditingProgram(program);
+            setIsFormOpen(true);
+          }}
+          onDelete={(programId) => deleteMutation.mutate(programId)}
           onView={handleView}
-          onToggleStatus={handleToggleStatus}
-          isLoading={loading}
+          onToggleStatus={(programId, isActive) => toggleStatusMutation.mutate({ programId, is_active: isActive })}
+          isLoading={isLoading}
         />
       </div>
 
@@ -276,8 +199,8 @@ export default function Academics() {
         program={editingProgram}
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
-        onImageUpload={handleImageUpload}
-        isLoading={submitting}
+        onImageUpload={uploadImage}
+        isLoading={createMutation.isPending || updateMutation.isPending}
         isOpen={isFormOpen}
       />
 
@@ -304,7 +227,7 @@ export default function Academics() {
                   {viewingProgram.main_image ? (
                     <img
                       src={viewingProgram.main_image}
-                      alt={viewingProgram.program_title}
+                      alt={viewingProgram.name}
                       className="w-full h-64 object-cover rounded-lg"
                     />
                   ) : (
@@ -318,7 +241,7 @@ export default function Academics() {
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                      {viewingProgram.program_title}
+                      {viewingProgram.name}
                     </h3>
                     <div className="flex items-center space-x-4">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
@@ -329,21 +252,14 @@ export default function Academics() {
                         {viewingProgram.is_active ? 'Active' : 'Inactive'}
                       </span>
                       <span className="text-sm text-gray-500">
-                        Category: {viewingProgram.category}
+                        Category: {viewingProgram.program_type}
                       </span>
                     </div>
                   </div>
 
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900 mb-2">Short Description</h4>
-                    <p className="text-gray-700">{viewingProgram.short_description}</p>
-                  </div>
-
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Full Description</h4>
-                    <div className="text-gray-700 whitespace-pre-wrap">
-                      {viewingProgram.full_description}
-                    </div>
+                    <p className="text-gray-700">{viewingProgram.description}</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
@@ -367,8 +283,8 @@ export default function Academics() {
               <button
                 onClick={() => {
                   setIsViewModalOpen(false);
-                  // Navigate to edit page - this should be handled by routing
-                  window.location.href = `/admin/academics/edit/${viewingProgram.id}`;
+                  setEditingProgram(viewingProgram);
+                  setIsFormOpen(true);
                 }}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >

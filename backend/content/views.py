@@ -1,15 +1,19 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status, parsers
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
 from .models import (
     HeroSlide, BreakingNews, PageContent,
     SchoolFeature, SchoolStats, StaffCounts, Testimonial,
-    ContactSubmission, SocialMediaLink
+    ContactSubmission, SocialMediaLink, BoardMember, LeadershipMessage, FileUpload,
+    ContactPageContent, ContactAddress, ContactLocation
 )
 from .serializers import (
     HeroSlideSerializer, BreakingNewsSerializer,
     PageContentSerializer, SchoolFeatureSerializer, SchoolStatsSerializer,
     StaffCountsSerializer, TestimonialSerializer, ContactSubmissionSerializer,
-    SocialMediaLinkSerializer
+    SocialMediaLinkSerializer, BoardMemberSerializer, LeadershipMessageSerializer,
+    FileUploadSerializer, ContactPageContentSerializer, ContactAddressSerializer,
+    ContactLocationSerializer
 )
 
 # Create your views here.
@@ -49,6 +53,43 @@ class StaffCountsViewSet(viewsets.ModelViewSet):
 class TestimonialViewSet(viewsets.ModelViewSet):
     queryset = Testimonial.objects.filter(is_active=True).order_by('-created_at')
     serializer_class = TestimonialSerializer
+    permission_classes = [AllowAny]
+
+class BoardMemberViewSet(viewsets.ModelViewSet):
+    queryset = BoardMember.objects.filter(is_active=True).order_by('order_index')
+    serializer_class = BoardMemberSerializer
+    permission_classes = [AllowAny]
+
+class LeadershipMessageViewSet(viewsets.ModelViewSet):
+    queryset = LeadershipMessage.objects.filter(is_active=True).order_by('display_order')
+    serializer_class = LeadershipMessageSerializer
+    permission_classes = [AllowAny]
+
+class FileUploadViewSet(viewsets.ModelViewSet):
+    queryset = FileUpload.objects.all().order_by('-uploaded_at')
+    serializer_class = FileUploadSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class ContactPageContentViewSet(viewsets.ModelViewSet):
+    queryset = ContactPageContent.objects.filter(is_active=True).order_by('display_order')
+    serializer_class = ContactPageContentSerializer
+    permission_classes = [AllowAny]
+
+class ContactAddressViewSet(viewsets.ModelViewSet):
+    queryset = ContactAddress.objects.filter(is_active=True).order_by('display_order')
+    serializer_class = ContactAddressSerializer
+    permission_classes = [AllowAny]
+
+class ContactLocationViewSet(viewsets.ModelViewSet):
+    queryset = ContactLocation.objects.filter(is_active=True).order_by('display_order')
+    serializer_class = ContactLocationSerializer
     permission_classes = [AllowAny]
 
 class ContactSubmissionViewSet(viewsets.ModelViewSet):

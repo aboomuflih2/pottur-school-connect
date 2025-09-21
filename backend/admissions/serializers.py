@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from .models import KgStdApplication, PlusOneApplication, InterviewSubject, InterviewSubjectTemplate
+from .models import KgStdApplication, PlusOneApplication, InterviewSubject, InterviewSubjectTemplate, AdmissionForm
+
+class AdmissionFormSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdmissionForm
+        fields = '__all__'
 
 class KgStdApplicationSerializer(serializers.ModelSerializer):
     class Meta:

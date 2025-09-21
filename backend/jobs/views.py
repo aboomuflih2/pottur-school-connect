@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, parsers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
@@ -43,6 +43,7 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
     queryset = JobApplication.objects.all().order_by('-created_at')
     serializer_class = JobApplicationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def get_queryset(self):
         if self.request.user.is_staff:

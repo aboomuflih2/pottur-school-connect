@@ -22,6 +22,118 @@ class HeroSlide(models.Model):
     def __str__(self):
         return self.title
 
+
+class BoardMember(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    position = models.CharField(max_length=255)
+    board_type = models.CharField(max_length=50, choices=[('governing_board', 'Governing Board'), ('board_of_directors', 'Board of Directors')], default='governing_board')
+    bio = models.TextField(blank=True)
+    photo_url = models.URLField(blank=True)
+    social_links = models.JSONField(default=dict, blank=True)
+    order_index = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order_index', 'name']
+        verbose_name = 'Board Member'
+        verbose_name_plural = 'Board Members'
+
+    def __str__(self):
+        return self.name
+
+
+class LeadershipMessage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    person_name = models.CharField(max_length=255)
+    person_title = models.CharField(max_length=255)
+    position = models.CharField(max_length=50, choices=[('chairman', 'Chairman'), ('principal', 'Principal'), ('vice_principal', 'Vice Principal'), ('manager', 'Manager')])
+    message_content = models.TextField()
+    photo_url = models.URLField(blank=True)
+    is_active = models.BooleanField(default=True)
+    display_order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'person_name']
+        verbose_name = 'Leadership Message'
+        verbose_name_plural = 'Leadership Messages'
+
+    def __str__(self):
+        return self.person_name
+
+
+class FileUpload(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    file = models.FileField(upload_to='uploads/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.file.name
+
+
+class ContactPageContent(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    content_type = models.CharField(max_length=50)
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    additional_data = models.JSONField(default=dict, blank=True)
+    display_order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order']
+        verbose_name = 'Contact Page Content'
+        verbose_name_plural = 'Contact Page Contents'
+
+    def __str__(self):
+        return self.title
+
+class ContactAddress(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    address_line_1 = models.CharField(max_length=255)
+    address_line_2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=20)
+    country = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    display_order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order']
+        verbose_name = 'Contact Address'
+        verbose_name_plural = 'Contact Addresses'
+
+    def __str__(self):
+        return self.title
+
+class ContactLocation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    url = models.URLField()
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    display_order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order']
+        verbose_name = 'Contact Location'
+        verbose_name_plural = 'Contact Locations'
+
+    def __str__(self):
+        return self.title
+
 class SchoolStats(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     stat_name = models.CharField(max_length=100)

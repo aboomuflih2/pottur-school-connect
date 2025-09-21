@@ -1,68 +1,42 @@
-import { supabase } from '@/integrations/supabase/client';
+import { djangoAPI } from '@/lib/django-api';
 import { ImageUploadResponse } from '@/types/academic';
 
 /**
- * Upload an image to Supabase storage for board member photos
+ * Upload an image to the Django backend
  * @param file - The image file to upload
- * @param bucketName - The storage bucket name (default: 'member-photos')
  * @returns Promise with upload response containing URL and metadata
  */
-export const uploadMemberPhoto = async (
-  file: File,
-  bucketName: string = 'member-photos'
+export const uploadImage = async (
+  file: File
 ): Promise<ImageUploadResponse> => {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-  const filePath = `board-members/${fileName}`;
-
   try {
-    // Upload the file to Supabase storage
-    const { error: uploadError } = await supabase.storage
-      .from(bucketName)
-      .upload(filePath, file);
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      throw uploadError;
-    }
-
-    // Get the public URL for the uploaded file
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucketName)
-      .getPublicUrl(filePath);
-
+    // @ts-ignore
+    const response = await djangoAPI.uploadFile(file);
     return {
-      url: publicUrl,
-      path: filePath,
+      // @ts-ignore
+      url: response.file,
+      // @ts-ignore
+      path: response.id, // Using the id as the path for deletion
       size: file.size,
       type: file.type
     };
   } catch (error) {
-    console.error('Error uploading member photo:', error);
-    throw new Error('Failed to upload member photo');
+    console.error('Error uploading image:', error);
+    throw new Error('Failed to upload image');
   }
 };
 
 /**
- * Delete an image from Supabase storage
- * @param filePath - The file path in storage
- * @param bucketName - The storage bucket name (default: 'member-photos')
+ * Delete an image from the Django backend
+ * @param fileId - The file id
  */
-export const deleteMemberPhoto = async (
-  filePath: string,
-  bucketName: string = 'member-photos'
+export const deleteImage = async (
+  fileId: string
 ): Promise<void> => {
   try {
-    const { error } = await supabase.storage
-      .from(bucketName)
-      .remove([filePath]);
-
-    if (error) {
-      console.error('Delete error:', error);
-      throw error;
-    }
+    await djangoAPI.deleteFile(fileId);
   } catch (error) {
-    console.error('Error deleting member photo:', error);
-    throw new Error('Failed to delete member photo');
+    console.error('Error deleting image:', error);
+    throw new Error('Failed to delete image');
   }
 };

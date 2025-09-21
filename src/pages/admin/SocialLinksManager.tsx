@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Plus, Facebook, Instagram, Youtube, Twitter, Linkedin } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { djangoAPI } from '@/lib/django-api';
 import { useToast } from '@/hooks/use-toast';
 
 interface SocialLink {
@@ -39,132 +40,89 @@ const platformLabels = {
 };
 
 export default function SocialLinksManager() {
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingLink, setEditingLink] = useState<SocialLink | null>(null);
-  const [formData, setFormData] = useState({
-    platform: '',
-    url: '',
-    is_active: true,
-    display_order: 0,
-  });
-  const { toast } = useToast();
-
-  useEffect(() => {
-    fetchSocialLinks();
-  }, []);
-
-  const fetchSocialLinks = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('social_media_links')
-        .select('*')
-        .order('display_order');
-
-      if (error) throw error;
-      setSocialLinks(data || []);
-    } catch (error) {
-      console.error('Error fetching social links:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch social media links",
-        variant: "destructive",
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editingLink, setEditingLink] = useState<SocialLink | null>(null);
+    const [formData, setFormData] = useState({
+        platform: '',
+        url: '',
+        is_active: true,
+        display_order: 0,
       });
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      if (editingLink) {
-        // Update existing link
-        const { error } = await supabase
-          .from('social_media_links')
-          .update(formData)
-          .eq('id', editingLink.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Social media link updated successfully",
-        });
-      } else {
-        // Create new link
-        const { error } = await supabase
-          .from('social_media_links')
-          .insert([{ ...formData, display_order: socialLinks.length + 1 }]);
-
-        if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Social media link added successfully",
-        });
-      }
-
-      setDialogOpen(false);
-      setEditingLink(null);
-      setFormData({ platform: '', url: '', is_active: true, display_order: 0 });
-      fetchSocialLinks();
-    } catch (error) {
-      console.error('Error saving social link:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save social media link",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEdit = (link: SocialLink) => {
-    setEditingLink(link);
-    setFormData({
-      platform: link.platform,
-      url: link.url,
-      is_active: link.is_active,
-      display_order: link.display_order,
+    const { data: socialLinks = [], isLoading } = useQuery<SocialLink[], Error>({
+        queryKey: ['socialLinks'],
+        queryFn: async () => {
+            // @ts-ignore
+            const response = await djangoAPI.getSocialMediaLinks();
+            // @ts-ignore
+            return response.results;
+        },
     });
-    setDialogOpen(true);
-  };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this social media link?')) return;
+    const mutationOptions = {
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['socialLinks'] });
+            setDialogOpen(false);
+            resetForm();
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive",
+            });
+        },
+    };
 
-    try {
-      const { error } = await supabase
-        .from('social_media_links')
-        .delete()
-        .eq('id', id);
+    const createMutation = useMutation({
+        mutationFn: (linkData: any) => djangoAPI.createSocialMediaLink(linkData),
+        ...mutationOptions,
+    });
 
-      if (error) throw error;
+    const updateMutation = useMutation({
+        mutationFn: (linkData: any) => djangoAPI.updateSocialMediaLink(editingLink!.id, linkData),
+        ...mutationOptions,
+    });
 
-      toast({
-        title: "Success",
-        description: "Social media link deleted successfully",
-      });
+    const deleteMutation = useMutation({
+        mutationFn: (linkId: string) => djangoAPI.deleteSocialMediaLink(linkId),
+        ...mutationOptions,
+    });
 
-      fetchSocialLinks();
-    } catch (error) {
-      console.error('Error deleting social link:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete social media link",
-        variant: "destructive",
-      });
-    }
-  };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const submitData = { ...formData, display_order: editingLink?.display_order ?? socialLinks.length + 1 };
+        if (editingLink) {
+            updateMutation.mutate(submitData);
+        } else {
+            createMutation.mutate(submitData);
+        }
+      };
 
-  const resetForm = () => {
-    setFormData({ platform: '', url: '', is_active: true, display_order: 0 });
-    setEditingLink(null);
-  };
+      const handleEdit = (link: SocialLink) => {
+        setEditingLink(link);
+        setFormData({
+          platform: link.platform,
+          url: link.url,
+          is_active: link.is_active,
+          display_order: link.display_order,
+        });
+        setDialogOpen(true);
+      };
 
-  if (loading) {
+      const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this social media link?')) return;
+        deleteMutation.mutate(id);
+      };
+
+    const resetForm = () => {
+        setFormData({ platform: '', url: '', is_active: true, display_order: 0 });
+        setEditingLink(null);
+    };
+
+  if (isLoading) {
     return <div className="flex items-center justify-center p-8">Loading...</div>;
   }
 
@@ -234,7 +192,7 @@ export default function SocialLinksManager() {
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                   {editingLink ? 'Update Link' : 'Add Link'}
                 </Button>
               </DialogFooter>

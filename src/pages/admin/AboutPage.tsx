@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Save, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { djangoAPI } from "@/lib/django-api";
 import { useToast } from "@/hooks/use-toast";
-
 
 interface PageContent {
   about_legacy: string;
@@ -16,6 +16,7 @@ interface PageContent {
 }
 
 interface StaffCounts {
+  id: string;
   teaching_staff: number;
   security_staff: number;
   professional_staff: number;
@@ -23,118 +24,83 @@ interface StaffCounts {
 }
 
 const AboutPageManager = () => {
-  const [content, setContent] = useState<PageContent>({
-    about_legacy: "",
-    about_mission: "",
-    about_vision: "",
-  });
-  const [staffCounts, setStaffCounts] = useState<StaffCounts>({
-    teaching_staff: 0,
-    security_staff: 0,
-    professional_staff: 0,
-    guides_staff: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const [content, setContent] = useState<PageContent>({ about_legacy: "", about_mission: "", about_vision: "" });
+    const [staffCounts, setStaffCounts] = useState<StaffCounts | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+    const { isLoading } = useQuery({
+        queryKey: ['aboutPageData'],
+        queryFn: async () => {
+            // @ts-ignore
+            const contentPromise = djangoAPI.getPageContent();
+            // @ts-ignore
+            const countsPromise = djangoAPI.getStaffCounts();
+            const [contentData, countsData] = await Promise.all([
+                contentPromise,
+                countsPromise,
+            ]);
+            return { contentData, countsData };
+        },
+        onSuccess: (data) => {
+            if (data.contentData) {
+                // @ts-ignore
+                const contentMap = data.contentData.results.reduce((acc, item) => {
+                    // @ts-ignore
+                    acc[item.page_name] = item.content;
+                    return acc;
+                }, {});
+                setContent(contentMap);
+            }
+            if (data.countsData) {
+                // @ts-ignore
+                setStaffCounts(data.countsData.results[0]);
+            }
+        },
+    });
 
-  const loadData = async () => {
-    try {
-      // Load page content
-      const { data: contentData, error: contentError } = await supabase
-        .from('page_content')
-        .select('page_key, content')
-        .in('page_key', ['about_legacy', 'about_mission', 'about_vision']);
+    const mutationOptions = {
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['aboutPageData'] });
+            toast({
+                title: "Success",
+                description: "About page content has been updated successfully.",
+            });
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive",
+            });
+        },
+    };
 
-      if (contentError) throw contentError;
+    const updateContentMutation = useMutation({
+        mutationFn: async (contentData: any) => {
+            const updates = Object.entries(contentData).map(([page_key, contentText]) =>
+                // @ts-ignore
+                djangoAPI.updatePageContent(page_key, { content: contentText })
+            );
+            return Promise.all(updates);
+        },
+        ...mutationOptions,
+    });
 
-      // Load staff counts
-      const { data: countsData, error: countsError } = await supabase
-        .from('staff_counts')
-        .select('*')
-        .single();
+    const updateCountsMutation = useMutation({
+        // @ts-ignore
+        mutationFn: (countsData: any) => djangoAPI.updateStaffCounts(countsData.id, countsData),
+        ...mutationOptions,
+    });
 
-      if (countsError) throw countsError;
+    const handleSave = () => {
+        updateContentMutation.mutate(content);
+        if (staffCounts) {
+            updateCountsMutation.mutate(staffCounts);
+        }
+    };
 
-      // Transform content data
-      if (contentData) {
-        const contentMap = contentData.reduce((acc, item) => {
-          acc[item.page_key as keyof PageContent] = item.content;
-          return acc;
-        }, {} as PageContent);
-        setContent(contentMap);
-      }
-
-      if (countsData) {
-        setStaffCounts(countsData);
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load page data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      // Update page content using upsert
-      const contentUpdates = Object.entries(content).map(([page_key, contentText]) => ({
-        page_key,
-        page_title: page_key.replace('about_', '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        content: contentText,
-        meta_description: `${page_key.replace('about_', '').replace('_', ' ')} content for our school`
-      }));
-
-      for (const update of contentUpdates) {
-        const { error } = await supabase
-          .from('page_content')
-          .upsert(update, { onConflict: 'page_key' });
-
-        if (error) throw error;
-      }
-
-      // Get staff counts ID and update
-      const { data: staffId, error: staffIdError } = await supabase
-        .from('staff_counts')
-        .select('id')
-        .single();
-
-      if (staffIdError) throw staffIdError;
-
-      const { error: countsError } = await supabase
-        .from('staff_counts')
-        .update(staffCounts)
-        .eq('id', staffId.id);
-
-      if (countsError) throw countsError;
-
-      toast({
-        title: "Success",
-        description: "About page content has been updated successfully.",
-      });
-    } catch (error) {
-      console.error('Error saving data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save changes. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -151,10 +117,10 @@ const AboutPageManager = () => {
         </div>
         <Button 
           onClick={handleSave}
-          disabled={saving}
+          disabled={updateContentMutation.isPending || updateCountsMutation.isPending}
           className="bg-primary hover:bg-primary-light"
         >
-          {saving ? (
+          {updateContentMutation.isPending || updateCountsMutation.isPending ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Saving...
@@ -233,8 +199,8 @@ const AboutPageManager = () => {
                   id="teaching"
                   type="number"
                   min="0"
-                  value={staffCounts.teaching_staff}
-                  onChange={(e) => setStaffCounts({ ...staffCounts, teaching_staff: parseInt(e.target.value) || 0 })}
+                  value={staffCounts?.teaching_staff || 0}
+                  onChange={(e) => staffCounts && setStaffCounts({ ...staffCounts, teaching_staff: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div className="space-y-2">
@@ -243,8 +209,8 @@ const AboutPageManager = () => {
                   id="security"
                   type="number"
                   min="0"
-                  value={staffCounts.security_staff}
-                  onChange={(e) => setStaffCounts({ ...staffCounts, security_staff: parseInt(e.target.value) || 0 })}
+                  value={staffCounts?.security_staff || 0}
+                  onChange={(e) => staffCounts && setStaffCounts({ ...staffCounts, security_staff: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div className="space-y-2">
@@ -253,8 +219,8 @@ const AboutPageManager = () => {
                   id="professional"
                   type="number"
                   min="0"
-                  value={staffCounts.professional_staff}
-                  onChange={(e) => setStaffCounts({ ...staffCounts, professional_staff: parseInt(e.target.value) || 0 })}
+                  value={staffCounts?.professional_staff || 0}
+                  onChange={(e) => staffCounts && setStaffCounts({ ...staffCounts, professional_staff: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div className="space-y-2">
@@ -263,8 +229,8 @@ const AboutPageManager = () => {
                   id="guides"
                   type="number"
                   min="0"
-                  value={staffCounts.guides_staff}
-                  onChange={(e) => setStaffCounts({ ...staffCounts, guides_staff: parseInt(e.target.value) || 0 })}
+                  value={staffCounts?.guides_staff || 0}
+                  onChange={(e) => staffCounts && setStaffCounts({ ...staffCounts, guides_staff: parseInt(e.target.value) || 0 })}
                 />
               </div>
             </div>

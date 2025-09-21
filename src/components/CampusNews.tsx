@@ -1,9 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { djangoAPI } from '@/lib/django-api';
 import { useNavigate } from "react-router-dom";
 
 interface NewsPost {
@@ -16,41 +16,16 @@ interface NewsPost {
 }
 
 const CampusNews = () => {
-  const [newsItems, setNewsItems] = useState<NewsPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  const fetchLatestNews = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .from('news_posts')
-        .select('id, title, excerpt, featured_image, publication_date')
-        .eq('is_published', true)
-        .order('publication_date', { ascending: false })
-        .limit(3);
-
-      if (fetchError) {
-        console.error('Error fetching news:', fetchError);
-        setError('Failed to load news articles');
-        return;
-      }
-
-      setNewsItems(data || []);
-    } catch (err) {
-      console.error('Error fetching news:', err);
-      setError('Failed to load news articles');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLatestNews();
-  }, []);
+    const navigate = useNavigate();
+    const { data: newsItems = [], isLoading, error } = useQuery<NewsPost[], Error>({
+        queryKey: ['latestNews'],
+        queryFn: async () => {
+            // @ts-ignore
+            const response = await djangoAPI.getLatestNews(3);
+            // @ts-ignore
+            return response.results;
+        },
+    });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -62,7 +37,6 @@ const CampusNews = () => {
   };
 
   const handleReadMore = (news: NewsPost) => {
-    // Generate slug from title if not available
     const slug = news.slug || news.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || news.id;
     navigate(`/news-events#${slug}`);
   };
@@ -85,7 +59,7 @@ const CampusNews = () => {
         </div>
 
         {/* Loading State */}
-        {loading && (
+        {isLoading && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="overflow-hidden">
@@ -110,17 +84,17 @@ const CampusNews = () => {
         )}
 
         {/* Error State */}
-        {error && !loading && (
+        {error && !isLoading && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={fetchLatestNews} variant="outline">
+            <p className="text-muted-foreground mb-4">{error.message}</p>
+            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['latestNews'] })} variant="outline">
               Try Again
             </Button>
           </div>
         )}
 
         {/* Empty State */}
-        {!loading && !error && newsItems.length === 0 && (
+        {!isLoading && !error && newsItems.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">No news articles published yet.</p>
             <Button onClick={handleViewAllNews} variant="outline">
@@ -130,7 +104,7 @@ const CampusNews = () => {
         )}
 
         {/* News Grid */}
-        {!loading && !error && newsItems.length > 0 && (
+        {!isLoading && !error && newsItems.length > 0 && (
           <>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               {newsItems.map((news) => (

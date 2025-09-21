@@ -1,89 +1,64 @@
-import { useState, useEffect } from 'react';
-import { authService } from '../services/authService';
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { djangoAPI } from '@/lib/django-api';
+import { jwtDecode } from 'jwt-decode';
 
-interface User {
-  id: string;
-  email: string;
-  username: string;
-  is_staff: boolean;
-}
-
-interface AuthState {
-  user: User | null;
+interface AuthContextType {
+  user: any;
   loading: boolean;
+  login: (credentials: any) => Promise<void>;
+  logout: () => void;
 }
 
-export function useAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    loading: true,
-  });
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-  useEffect(() => {
-    // Check if user is already authenticated
-    const checkAuth = async () => {
-      if (authService.isAuthenticated()) {
-        try {
-          const user = await authService.getCurrentUser();
-          setAuthState({
-            user,
-            loading: false,
-          });
-        } catch (error) {
-          setAuthState({
-            user: null,
-            loading: false,
-          });
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            try {
+                const decodedUser = jwtDecode(token);
+                setUser(decodedUser);
+                djangoAPI.setToken(token);
+            } catch (error) {
+                console.error('Invalid token');
+                localStorage.removeItem('accessToken');
+            }
         }
-      } else {
-        setAuthState({
-          user: null,
-          loading: false,
-        });
-      }
+        setLoading(false);
+    }, []);
+
+    const login = async (credentials: any) => {
+        const response = await djangoAPI.login(credentials);
+        // @ts-ignore
+        const { access, refresh } = response;
+        localStorage.setItem('accessToken', access);
+        localStorage.setItem('refreshToken', refresh);
+        const decodedUser = jwtDecode(access);
+        setUser(decodedUser);
+        djangoAPI.setToken(access);
     };
 
-    checkAuth();
-  }, []);
+    const logout = () => {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        setUser(null);
+        djangoAPI.setToken('');
+    };
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      await authService.login(email, password);
-      const user = await authService.getCurrentUser();
-      setAuthState({
-        user,
-        loading: false,
-      });
-      return { data: { user }, error: null };
-    } catch (error) {
-      return { data: null, error: { message: 'Login failed' } };
+    return (
+        <AuthContext.Provider value={{ user, loading, login, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
     }
-  };
-
-  const signUp = async (email: string, password: string) => {
-    // For now, redirect to admin to create users
-    return { data: null, error: { message: 'Please contact admin to create account' } };
-  };
-
-  const signOut = async () => {
-    authService.logout();
-    setAuthState({
-      user: null,
-      loading: false,
-    });
-    return { error: null };
-  };
-
-  const checkAdminRole = async () => {
-    if (!authState.user) return false;
-    return authState.user.is_staff;
-  };
-
-  return {
-    ...authState,
-    signIn,
-    signUp,
-    signOut,
-    checkAdminRole,
-  };
-}
+    return context;
+};

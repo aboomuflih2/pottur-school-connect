@@ -2,8 +2,39 @@ from rest_framework import serializers
 from .models import (
     HeroSlide, BreakingNews, PageContent,
     SchoolFeature, SchoolStats, StaffCounts, Testimonial,
-    ContactSubmission, SocialMediaLink
+    ContactSubmission, SocialMediaLink, BoardMember, LeadershipMessage, FileUpload,
+    ContactPageContent, ContactAddress, ContactLocation
 )
+
+class ContactPageContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactPageContent
+        fields = '__all__'
+
+class ContactAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactAddress
+        fields = '__all__'
+
+class ContactLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactLocation
+        fields = '__all__'
+
+class FileUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FileUpload
+        fields = '__all__'
+
+class LeadershipMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadershipMessage
+        fields = '__all__'
+
+class BoardMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BoardMember
+        fields = '__all__'
 
 class HeroSlideSerializer(serializers.ModelSerializer):
     class Meta:

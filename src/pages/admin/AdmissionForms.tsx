@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { djangoAPI } from "@/lib/django-api";
 import { Save, Settings } from "lucide-react";
 
 interface AdmissionForm {
@@ -17,99 +18,61 @@ interface AdmissionForm {
 
 export default function AdmissionForms() {
   const { toast } = useToast();
-  const [forms, setForms] = useState<AdmissionForm[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const [kgStdYear, setKgStdYear] = useState("");
+  const [plusOneYear, setPlusOneYear] = useState("");
 
-  useEffect(() => {
-    fetchForms();
-  }, []);
+  const { data: forms = [], isLoading } = useQuery<AdmissionForm[], Error>({
+    queryKey: ['admissionForms'],
+    queryFn: async () => {
+        // @ts-ignore
+        const response = await djangoAPI.getAdmissionForms();
+        // @ts-ignore
+        return response.results;
+    },
+    onSuccess: (data) => {
+        const kgStd = data.find(f => f.form_type === 'kg_std');
+        const plusOne = data.find(f => f.form_type === 'plus_one');
+        if (kgStd) setKgStdYear(kgStd.academic_year);
+        if (plusOne) setPlusOneYear(plusOne.academic_year);
+    }
+  });
 
-  const fetchForms = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('admission_forms')
-        .select('*')
-        .order('form_type');
-
-      if (error) throw error;
-      setForms(data || []);
-    } catch (error: unknown) {
+  const mutationOptions = {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admissionForms'] });
+    },
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to fetch admission forms",
-        variant: "destructive"
+        description: error.message,
+        variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+    },
+  };
+
+  const updateFormMutation = useMutation({
+    mutationFn: ({ formType, data }: { formType: string, data: any }) => djangoAPI.updateAdmissionForm(formType, data),
+    ...mutationOptions,
+  });
+
+  const handleStatusChange = (formType: string, isActive: boolean) => {
+    const form = forms.find(f => f.form_type === formType);
+    if (form) {
+        updateFormMutation.mutate({ formType, data: { ...form, is_active: isActive } });
     }
   };
 
-  const updateFormStatus = async (formType: string, isActive: boolean) => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('admission_forms')
-        .update({ is_active: isActive })
-        .eq('form_type', formType);
-
-      if (error) throw error;
-
-      setForms(forms.map(form => 
-        form.form_type === formType 
-          ? { ...form, is_active: isActive }
-          : form
-      ));
-
-      toast({
-        title: "Success",
-        description: `${formType === 'kg_std' ? 'KG & STD' : '+1 / HSS'} form ${isActive ? 'activated' : 'deactivated'}`,
-      });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to update form status";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive"
-      });
-    } finally {
-      setSaving(false);
+  const handleYearChange = (formType: string) => {
+    const form = forms.find(f => f.form_type === formType);
+    const academic_year = formType === 'kg_std' ? kgStdYear : plusOneYear;
+    if (form) {
+        updateFormMutation.mutate({ formType, data: { ...form, academic_year } });
     }
   };
 
-  const updateAcademicYear = async (formType: string, academicYear: string) => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('admission_forms')
-        .update({ academic_year: academicYear })
-        .eq('form_type', formType);
 
-      if (error) throw error;
-
-      setForms(forms.map(form => 
-        form.form_type === formType 
-          ? { ...form, academic_year: academicYear }
-          : form
-      ));
-
-      toast({
-        title: "Success",
-        description: "Academic year updated successfully",
-      });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to update academic year";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive"
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -154,8 +117,8 @@ export default function AdmissionForms() {
               <Switch
                 id="kg-std-toggle"
                 checked={kgStdForm?.is_active || false}
-                onCheckedChange={(checked) => updateFormStatus('kg_std', checked)}
-                disabled={saving}
+                onCheckedChange={(checked) => handleStatusChange('kg_std', checked)}
+                disabled={updateFormMutation.isPending}
               />
             </div>
 
@@ -164,20 +127,13 @@ export default function AdmissionForms() {
               <div className="flex gap-2">
                 <Input
                   id="kg-std-year"
-                  value={kgStdForm?.academic_year || ""}
-                  onChange={(e) => {
-                    const updatedForms = forms.map(form => 
-                      form.form_type === 'kg_std' 
-                        ? { ...form, academic_year: e.target.value }
-                        : form
-                    );
-                    setForms(updatedForms);
-                  }}
+                  value={kgStdYear}
+                  onChange={(e) => setKgStdYear(e.target.value)}
                   placeholder="e.g., 2026-27"
                 />
                 <Button
-                  onClick={() => updateAcademicYear('kg_std', kgStdForm?.academic_year || "")}
-                  disabled={saving}
+                  onClick={() => handleYearChange('kg_std')}
+                  disabled={updateFormMutation.isPending}
                   size="sm"
                 >
                   <Save className="w-4 h-4" />
@@ -219,8 +175,8 @@ export default function AdmissionForms() {
               <Switch
                 id="plus-one-toggle"
                 checked={plusOneForm?.is_active || false}
-                onCheckedChange={(checked) => updateFormStatus('plus_one', checked)}
-                disabled={saving}
+                onCheckedChange={(checked) => handleStatusChange('plus_one', checked)}
+                disabled={updateFormMutation.isPending}
               />
             </div>
 
@@ -229,20 +185,13 @@ export default function AdmissionForms() {
               <div className="flex gap-2">
                 <Input
                   id="plus-one-year"
-                  value={plusOneForm?.academic_year || ""}
-                  onChange={(e) => {
-                    const updatedForms = forms.map(form => 
-                      form.form_type === 'plus_one' 
-                        ? { ...form, academic_year: e.target.value }
-                        : form
-                    );
-                    setForms(updatedForms);
-                  }}
+                  value={plusOneYear}
+                  onChange={(e) => setPlusOneYear(e.target.value)}
                   placeholder="e.g., 2025-26"
                 />
                 <Button
-                  onClick={() => updateAcademicYear('plus_one', plusOneForm?.academic_year || "")}
-                  disabled={saving}
+                  onClick={() => handleYearChange('plus_one')}
+                  disabled={updateFormMutation.isPending}
                   size="sm"
                 >
                   <Save className="w-4 h-4" />
