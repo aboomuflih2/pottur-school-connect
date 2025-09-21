@@ -2,18 +2,22 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { adminSupabase as supabase } from '@/integrations/supabase/admin-client';
 import { toast } from '@/hooks/use-toast';
-import { Radio, Save } from 'lucide-react';
+import { Radio, Save, Link, ExternalLink } from 'lucide-react';
 
 interface BreakingNews {
   id: string;
   title: string;
   content: string;
   message?: string; // For backward compatibility
+  link_url?: string;
+  link_text?: string;
+  is_external?: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -24,6 +28,9 @@ const BreakingNewsManager = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
+  const [isExternal, setIsExternal] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [currentActive, setCurrentActive] = useState<BreakingNews | null>(null);
 
@@ -31,11 +38,26 @@ const BreakingNewsManager = () => {
     loadBreakingNews();
   }, []);
 
+  // URL validation functions
+  const validateUrl = (url: string, isExternal: boolean): boolean => {
+    if (!url.trim()) return true; // Empty URL is valid (optional)
+    
+    if (isExternal) {
+      return url.startsWith('http://') || url.startsWith('https://');
+    } else {
+      return url.startsWith('/');
+    }
+  };
+
+  const sanitizeUrl = (url: string): string => {
+    return url.trim().replace(/[<>"']/g, ''); // Basic XSS prevention
+  };
+
   const loadBreakingNews = async () => {
     try {
       const { data, error } = await supabase
         .from('breaking_news')
-        .select('id, title, content, message, is_active, created_at, updated_at')
+        .select('id, title, content, message, link_url, link_text, is_external, is_active, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -53,6 +75,9 @@ const BreakingNewsManager = () => {
       if (active) {
         setCurrentActive(active);
         setMessage(active.message || active.content || active.title);
+        setLinkUrl(active.link_url || '');
+        setLinkText(active.link_text || '');
+        setIsExternal(active.is_external || false);
         setIsActive(active.is_active);
       }
     } catch (error) {
@@ -70,6 +95,32 @@ const BreakingNewsManager = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+
+    // Validate link fields
+    if (linkUrl.trim() && !linkText.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Link text is required when providing a link URL',
+      });
+      setSaving(false);
+      return;
+    }
+
+    if (linkUrl.trim() && !validateUrl(linkUrl, isExternal)) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: isExternal 
+          ? 'External links must start with http:// or https://' 
+          : 'Internal links must start with /',
+      });
+      setSaving(false);
+      return;
+    }
+
+    const sanitizedUrl = linkUrl.trim() ? sanitizeUrl(linkUrl) : '';
+    const sanitizedText = linkText.trim() ? linkText.trim().replace(/[<>"']/g, '') : '';
 
     try {
       // If we have a currently active item and we're making a new one active,
@@ -90,6 +141,9 @@ const BreakingNewsManager = () => {
             title: message.trim(),
             content: message.trim(),
             message: message.trim(),
+            link_url: sanitizedUrl || null,
+            link_text: sanitizedText || null,
+            is_external: isExternal,
             is_active: isActive 
           })
           .eq('id', currentActive.id);
@@ -103,6 +157,9 @@ const BreakingNewsManager = () => {
             title: message.trim(),
             content: message.trim(),
             message: message.trim(),
+            link_url: sanitizedUrl || null,
+            link_text: sanitizedText || null,
+            is_external: isExternal,
             is_active: isActive
           }]);
 
@@ -193,6 +250,16 @@ const BreakingNewsManager = () => {
             <div className="space-y-2">
               <p className="text-sm bg-muted p-3 rounded-lg">
                 {currentActive.message}
+                {currentActive.link_url && currentActive.link_text && (
+                  <span className="ml-2">
+                    {currentActive.is_external ? (
+                      <ExternalLink className="h-3 w-3 inline ml-1" />
+                    ) : (
+                      <Link className="h-3 w-3 inline ml-1" />
+                    )}
+                    <span className="text-primary underline ml-1">{currentActive.link_text}</span>
+                  </span>
+                )}
               </p>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
@@ -227,6 +294,68 @@ const BreakingNewsManager = () => {
                 <span>Keep it concise for better readability</span>
                 <span>{message.length}/500 characters</span>
               </div>
+            </div>
+
+            {/* Link Management Section */}
+            <div className="space-y-4 border-t pt-4">
+              <div className="flex items-center gap-2">
+                <Link className="h-4 w-4" />
+                <Label className="text-base font-medium">Optional Link</Label>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="link_url">Link URL</Label>
+                  <Input
+                    id="link_url"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder={isExternal ? "https://example.com" : "/page-path"}
+                    className={linkUrl.trim() && !validateUrl(linkUrl, isExternal) ? "border-red-500" : ""}
+                  />
+                  {linkUrl.trim() && !validateUrl(linkUrl, isExternal) && (
+                    <p className="text-xs text-red-500">
+                      {isExternal ? "Must start with http:// or https://" : "Must start with /"}
+                    </p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="link_text">Link Text</Label>
+                  <Input
+                    id="link_text"
+                    value={linkText}
+                    onChange={(e) => setLinkText(e.target.value)}
+                    placeholder="Read More, Learn More, etc."
+                    className={linkUrl.trim() && !linkText.trim() ? "border-red-500" : ""}
+                  />
+                  {linkUrl.trim() && !linkText.trim() && (
+                    <p className="text-xs text-red-500">Required when URL is provided</p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_external"
+                  checked={isExternal}
+                  onCheckedChange={setIsExternal}
+                />
+                <Label htmlFor="is_external" className="flex items-center gap-2">
+                  {isExternal ? (
+                    <><ExternalLink className="h-4 w-4" /> External Link</>
+                  ) : (
+                    <><Link className="h-4 w-4" /> Internal Link</>
+                  )}
+                </Label>
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                {isExternal 
+                  ? "External links open in a new tab and must include http:// or https://"
+                  : "Internal links navigate within your site and must start with /"
+                }
+              </p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -266,7 +395,19 @@ const BreakingNewsManager = () => {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">{news.message}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {news.message}
+                        {news.link_url && news.link_text && (
+                          <span className="ml-2">
+                            {news.is_external ? (
+                              <ExternalLink className="h-3 w-3 inline ml-1" />
+                            ) : (
+                              <Link className="h-3 w-3 inline ml-1" />
+                            )}
+                            <span className="text-primary underline ml-1">{news.link_text}</span>
+                          </span>
+                        )}
+                      </p>
                       <div className="flex items-center gap-4 mt-2">
                         <span className="text-xs text-muted-foreground">
                           Created: {new Date(news.created_at).toLocaleDateString()}
@@ -274,6 +415,11 @@ const BreakingNewsManager = () => {
                         {news.updated_at !== news.created_at && (
                           <span className="text-xs text-muted-foreground">
                             Updated: {new Date(news.updated_at).toLocaleDateString()}
+                          </span>
+                        )}
+                        {news.link_url && (
+                          <span className="text-xs text-muted-foreground">
+                            Link: {news.is_external ? 'External' : 'Internal'}
                           </span>
                         )}
                       </div>

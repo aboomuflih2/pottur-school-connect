@@ -42,8 +42,6 @@ const getSocialIcon = (platform: string) => {
 };
 
 const MemberProfileModal: React.FC<MemberProfileModalProps> = ({ member, isOpen, onClose }) => {
-  if (!isOpen || !member) return null;
-
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -73,6 +71,8 @@ const MemberProfileModal: React.FC<MemberProfileModalProps> = ({ member, isOpen,
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
+
+  if (!isOpen || !member) return null;
 
   return (
     <div 

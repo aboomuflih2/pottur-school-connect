@@ -33,40 +33,50 @@ const AdminDashboard = () => {
     loadDashboardStats();
   }, []);
 
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = async (retryCount = 0) => {
     try {
-      const [
-        heroSlidesResult,
-        breakingNewsResult,
-        pageContentResult,
-        academicProgramsResult,
-        newsPostsResult,
-        testimonialsResult,
-        contactSubmissionsResult,
-        unreadContactsResult,
-      ] = await Promise.all([
-        supabase.from('hero_slides').select('*', { count: 'exact', head: true }),
-        supabase.from('breaking_news').select('*', { count: 'exact', head: true }),
-        supabase.from('page_content').select('*', { count: 'exact', head: true }),
-        supabase.from('academic_programs').select('*', { count: 'exact', head: true }),
-        supabase.from('news_posts').select('*', { count: 'exact', head: true }),
-        supabase.from('testimonials').select('*', { count: 'exact', head: true }),
-        supabase.from('contact_submissions').select('*', { count: 'exact', head: true }),
-        supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('is_read', false),
+      setLoading(true);
+      
+      // Batch 1: Content-related tables (reduce network congestion)
+      const [heroSlides, breakingNews, pageContent, academicPrograms] = await Promise.all([
+        supabase.from('hero_slides').select('id', { count: 'exact', head: true }),
+        supabase.from('breaking_news').select('id', { count: 'exact', head: true }),
+        supabase.from('page_content').select('id', { count: 'exact', head: true }),
+        supabase.from('academic_programs').select('id', { count: 'exact', head: true })
+      ]);
+
+      // Small delay to prevent network congestion
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Batch 2: User-generated content tables
+      const [newsPosts, testimonials, contactSubmissions, unreadContacts] = await Promise.all([
+        supabase.from('news_posts').select('id', { count: 'exact', head: true }),
+        supabase.from('testimonials').select('id', { count: 'exact', head: true }),
+        supabase.from('contact_submissions').select('id', { count: 'exact', head: true }),
+        supabase.from('contact_submissions').select('id', { count: 'exact', head: true }).eq('is_read', false)
       ]);
 
       setStats({
-        heroSlides: heroSlidesResult.count || 0,
-        breakingNews: breakingNewsResult.count || 0,
-        pageContent: pageContentResult.count || 0,
-        academicPrograms: academicProgramsResult.count || 0,
-        newsPosts: newsPostsResult.count || 0,
-        testimonials: testimonialsResult.count || 0,
-        contactSubmissions: contactSubmissionsResult.count || 0,
-        unreadContacts: unreadContactsResult.count || 0,
+        heroSlides: heroSlides.count || 0,
+        breakingNews: breakingNews.count || 0,
+        pageContent: pageContent.count || 0,
+        academicPrograms: academicPrograms.count || 0,
+        newsPosts: newsPosts.count || 0,
+        testimonials: testimonials.count || 0,
+        contactSubmissions: contactSubmissions.count || 0,
+        unreadContacts: unreadContacts.count || 0,
       });
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
+      
+      // Retry logic for network errors
+      if (retryCount < 2 && (error as any)?.message?.includes('aborted')) {
+        console.log(`Retrying dashboard stats request (attempt ${retryCount + 1})...`);
+        setTimeout(() => loadDashboardStats(retryCount + 1), 2000 * (retryCount + 1));
+        return;
+      }
+      
+      toast.error('Failed to load dashboard statistics');
     } finally {
       setLoading(false);
     }

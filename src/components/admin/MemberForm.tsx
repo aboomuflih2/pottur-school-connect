@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { BoardMember, CreateBoardMemberRequest, UpdateBoardMemberRequest, SOCIAL_PLATFORM_LABELS } from '../../../shared/types/board-members';
 import { useBoardMemberAdmin } from '../../hooks/useBoardMembers';
 import { Save, X, Plus, Trash2, Upload, User, AlertCircle } from 'lucide-react';
+import ImageUpload from './ImageUpload';
+import { uploadMemberPhoto } from '../../utils/imageUpload';
+import { ImageUploadResponse } from '../../types/academic';
 
 interface SocialLinkForm {
   id?: string;
@@ -12,17 +15,15 @@ interface SocialLinkForm {
 
 interface MemberFormProps {
   member?: BoardMember | null;
-  isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
 }
 
-const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSuccess }) => {
+const MemberForm: React.FC<MemberFormProps> = ({ member, onClose }) => {
   const { createMember, updateMember, loading } = useBoardMemberAdmin();
   const [formData, setFormData] = useState({
     name: '',
     designation: '',
-    board_type: 'governing_body',
+    board_type: 'governing_board',
     bio: '',
     email: '',
     mobile: '',
@@ -40,7 +41,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
       setFormData({
         name: member.name || '',
         designation: member.designation || '',
-        board_type: member.board_type || 'governing_body',
+        board_type: member.board_type || 'governing_board',
         bio: member.bio || '',
         email: member.email || '',
         mobile: member.mobile || '',
@@ -61,7 +62,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
       setFormData({
         name: '',
         designation: '',
-        board_type: 'governing_body',
+        board_type: 'governing_board',
         bio: '',
         email: '',
         mobile: '',
@@ -73,7 +74,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
     }
     setErrors({});
     setSubmitError('');
-  }, [member, isOpen]);
+  }, [member]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -90,7 +91,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (formData.mobile && !/^[\+]?[1-9][\d]{0,15}$/.test(formData.mobile.replace(/[\s\-\(\)]/g, ''))) {
+    if (formData.mobile && !/^[+]?[1-9][\d]{0,15}$/.test(formData.mobile.replace(/[\s\-()]/g, ''))) {
       newErrors.mobile = 'Please enter a valid mobile number';
     }
 
@@ -138,6 +139,18 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
     setSocialLinks(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handlePhotoUpload = async (file: File): Promise<ImageUploadResponse> => {
+    try {
+      const uploadResult = await uploadMemberPhoto(file);
+      // Update the form data with the new photo URL
+      setFormData(prev => ({ ...prev, photo_url: uploadResult.url }));
+      return uploadResult;
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      throw new Error('Failed to upload photo. Please try again.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -162,7 +175,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
             display_order: link.display_order
           }))
         };
-        await updateMember(member.id, updateData);
+        await updateMember({ ...updateData, id: member.id });
       } else {
         // Create new member
         const createData: CreateBoardMemberRequest = {
@@ -173,10 +186,9 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
             display_order: link.display_order
           }))
         };
-        await createMember(createData);
+        const newMember = await createMember(createData);
       }
       
-      onSuccess();
       onClose();
     } catch (error) {
       console.error('Failed to save member:', error);
@@ -190,7 +202,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
     }
   };
 
-  if (!isOpen) return null;
+
 
   return (
     <div 
@@ -267,9 +279,8 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
                   onChange={(e) => handleInputChange('board_type', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="governing_body">Governing Body</option>
-                  <option value="management_committee">Management Committee</option>
-                  <option value="advisory_board">Advisory Board</option>
+                  <option value="governing_board">Governing Board</option>
+                  <option value="board_of_directors">Board of Directors</option>
                 </select>
               </div>
 
@@ -288,39 +299,16 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, isOpen, onClose, onSucc
               </div>
             </div>
 
-            {/* Photo URL */}
+            {/* Photo Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Photo URL
+                Member Photo
               </label>
-              <div className="flex gap-3">
-                <input
-                  type="url"
-                  value={formData.photo_url}
-                  onChange={(e) => handleInputChange('photo_url', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://example.com/photo.jpg"
-                />
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-                >
-                  <Upload className="w-4 h-4" />
-                  Upload
-                </button>
-              </div>
-              {formData.photo_url && (
-                <div className="mt-3">
-                  <img 
-                    src={formData.photo_url} 
-                    alt="Preview" 
-                    className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
+              <ImageUpload
+                onUpload={handlePhotoUpload}
+                currentImage={formData.photo_url}
+                className="w-full"
+              />
             </div>
 
             {/* Bio */}

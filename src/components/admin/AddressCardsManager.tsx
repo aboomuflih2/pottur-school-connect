@@ -233,7 +233,7 @@ const AddressCardsManager = () => {
     }
   };
 
-  const updateAddressField = (id: string, field: keyof ContactAddress, value: any) => {
+  const updateAddressField = (id: string, field: keyof ContactAddress, value: string) => {
     setAddresses(prev => prev.map(address => 
       address.id === id ? { ...address, [field]: value } : address
     ));

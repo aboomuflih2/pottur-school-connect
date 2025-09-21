@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Pencil, Trash2, Plus, Upload, Image, GripVertical } from "lucide-react";
+import { generateUUID } from "@/utils/uuid";
 
 interface GalleryPhoto {
   id: string;
@@ -255,7 +256,7 @@ const GalleryManager = () => {
 
       // Upload to Supabase Storage: gallery-images bucket
       const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const filename = `${crypto.randomUUID()}.${ext}`;
+      const filename = `${generateUUID()}.${ext}`;
       const filePath = `gallery/${filename}`;
 
       const { error: uploadError } = await supabase.storage

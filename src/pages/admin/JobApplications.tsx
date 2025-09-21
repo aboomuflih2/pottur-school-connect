@@ -87,7 +87,7 @@ const JobApplications = () => {
           .filter(line => line.trim())
           .map(line => {
             const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-            const rowData: any = {};
+            const rowData: Partial<Omit<JobApplication, 'id' | 'created_at' | 'updated_at'>> = {};
             
             // Map required columns
             REQUIRED_COLUMNS.forEach(col => {
@@ -112,7 +112,7 @@ const JobApplications = () => {
               rowData.experience_years = parseInt(rowData.experience_years) || 0;
             }
             
-            return rowData;
+            return rowData as Omit<JobApplication, 'id' | 'created_at' | 'updated_at'>;
           });
 
         await bulkImport(importData);

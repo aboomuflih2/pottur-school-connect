@@ -8,6 +8,9 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    watch: {
+      ignored: ['**/backend/**', '**/backend_env/**', '**/node_modules/**']
+    }
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
@@ -19,14 +22,29 @@ export default defineConfig(({ mode }) => ({
     // Production optimizations
     target: 'esnext',
     minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
     sourcemap: mode === 'development',
     rollupOptions: {
       output: {
         // Manual chunk splitting for better caching
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+          ],
           supabase: ['@supabase/supabase-js'],
+          query: ['@tanstack/react-query'],
+          charts: ['recharts'],
+          carousel: ['embla-carousel-react'],
+          datepicker: ['react-day-picker'],
+          forms: ['react-hook-form', 'zod'],
           utils: ['clsx', 'tailwind-merge', 'class-variance-authority']
         },
         // Optimize chunk file names
@@ -56,8 +74,12 @@ export default defineConfig(({ mode }) => ({
       'react-dom',
       '@supabase/supabase-js',
       'react-router-dom',
-      'lucide-react'
-    ]
+      'lucide-react',
+      '@tanstack/react-query',
+      'react-hook-form',
+      'zod'
+    ],
+    exclude: ['@radix-ui/react-*']
   },
   // Environment variables
   define: {

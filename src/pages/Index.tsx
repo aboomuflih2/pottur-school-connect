@@ -1,36 +1,65 @@
-import { useState } from "react";
+import { useState, Suspense, lazy, memo, useCallback } from "react";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
-import BreakingNews from "@/components/BreakingNews";
 import LegacySection from "@/components/LegacySection";
-import AcademicPrograms from "@/components/AcademicPrograms";
-import CampusNews from "@/components/CampusNews";
-import ContactForm from "@/components/ContactForm";
-import Testimonials from "@/components/Testimonials";
-import JoinOurTeam from "@/components/JoinOurTeam";
 import Footer from "@/components/Footer";
-import { AdmissionsModal } from "@/components/admissions/AdmissionsModal";
 
-const Index = () => {
+// Defer non-critical homepage sections to speed first paint
+const BreakingNews = lazy(() => import("@/components/BreakingNews"));
+const AcademicPrograms = lazy(() => import("@/components/AcademicPrograms"));
+const CampusNews = lazy(() => import("@/components/CampusNews"));
+const ContactForm = lazy(() => import("@/components/ContactForm"));
+const Testimonials = lazy(() => import("@/components/Testimonials"));
+const JoinOurTeam = lazy(() => import("@/components/JoinOurTeam"));
+const AdmissionsModal = lazy(() =>
+  import("@/components/admissions/AdmissionsModal").then((m) => ({
+    default: m.AdmissionsModal,
+  }))
+);
+
+const Index = memo(() => {
   const [isAdmissionsModalOpen, setIsAdmissionsModalOpen] = useState(false);
+  
+  const handleAdmissionsClick = useCallback(() => {
+    setIsAdmissionsModalOpen(true);
+  }, []);
+  
+  const handleAdmissionsClose = useCallback(() => {
+    setIsAdmissionsModalOpen(false);
+  }, []);
+  
   return (
     <div className="min-h-screen">
-      <Header onAdmissionsClick={() => setIsAdmissionsModalOpen(true)} />
+      <Header onAdmissionsClick={handleAdmissionsClick} />
       <HeroSection />
-      <BreakingNews />
+      <Suspense fallback={<div className="py-6" />}> 
+        <BreakingNews />
+      </Suspense>
       <LegacySection />
-      <AcademicPrograms />
-      <CampusNews />
-      <ContactForm />
-      <Testimonials />
-      <JoinOurTeam />
+      <Suspense fallback={<div className="py-12" />}> 
+        <AcademicPrograms />
+      </Suspense>
+      <Suspense fallback={<div className="py-12" />}> 
+        <CampusNews />
+      </Suspense>
+      <Suspense fallback={<div className="py-12" />}> 
+        <ContactForm />
+      </Suspense>
+      <Suspense fallback={<div className="py-12" />}> 
+        <Testimonials />
+      </Suspense>
+      <Suspense fallback={<div className="py-12" />}> 
+        <JoinOurTeam />
+      </Suspense>
       <Footer />
-      <AdmissionsModal 
-        isOpen={isAdmissionsModalOpen} 
-        onClose={() => setIsAdmissionsModalOpen(false)} 
-      />
+      <Suspense fallback={null}>
+        <AdmissionsModal
+          isOpen={isAdmissionsModalOpen}
+          onClose={handleAdmissionsClose}
+        />
+      </Suspense>
     </div>
   );
-};
+});
 
 export default Index;

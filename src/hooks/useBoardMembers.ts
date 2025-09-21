@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabase-admin';
 import type { BoardMember, BoardType, CreateBoardMemberRequest, UpdateBoardMemberRequest } from '../../shared/types/board-members';
 
 export const useBoardMembers = (boardType?: BoardType) => {
@@ -60,7 +61,7 @@ export const useBoardMemberAdmin = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error: createError } = await supabase
+      const { data, error: createError } = await supabaseAdmin
         .from('board_members')
         .insert({
           name: memberData.name,
@@ -88,7 +89,7 @@ export const useBoardMemberAdmin = () => {
           display_order: link.display_order || index
         }));
 
-        await supabase
+        await supabaseAdmin
           .from('social_links')
           .insert(socialLinksData);
       }
@@ -107,7 +108,7 @@ export const useBoardMemberAdmin = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error: updateError } = await supabase
+      const { data, error: updateError } = await supabaseAdmin
         .from('board_members')
         .update({
           name: memberData.name,
@@ -137,12 +138,12 @@ export const useBoardMemberAdmin = () => {
     }
   };
 
-  const deleteMember = async (id: string): Promise<boolean> => {
+  const deleteMember = useCallback(async (id: string): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
 
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await supabaseAdmin
         .from('board_members')
         .delete()
         .eq('id', id);
@@ -158,14 +159,14 @@ export const useBoardMemberAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getAllMembers = async (): Promise<BoardMember[]> => {
+  const getAllMembers = useCallback(async (): Promise<BoardMember[]> => {
     try {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await supabaseAdmin
         .from('board_members')
         .select(`
           *,
@@ -185,7 +186,7 @@ export const useBoardMemberAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     loading,

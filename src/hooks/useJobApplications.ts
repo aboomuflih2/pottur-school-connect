@@ -52,20 +52,20 @@ export const useJobApplications = () => {
         cvFilePath = fileName;
       }
 
-      // Prepare application data
+      // Prepare application data - map to database schema
       const applicationData = {
-        full_name: formData.full_name,
+        name: formData.full_name, // Database uses 'name' not 'full_name'
         email: formData.email,
-        phone: formData.phone,
+        mobile: formData.phone, // Database uses 'mobile' not 'phone'
         designation: formData.designation,
-        subject: formData.subject || null,
-        other_designation: formData.other_designation || null,
-        experience_years: formData.experience_years,
-        qualifications: formData.qualifications,
+        subject_specification: formData.subject || null, // Database uses 'subject_specification'
+        specify_other: formData.other_designation || null, // Database uses 'specify_other'
+        place: formData.address || '', // Database uses 'place' for address
+        post_office: formData.post_office, // Now properly mapped from form
         district: formData.district,
-        address: formData.address,
+        pincode: formData.pincode, // Now properly mapped from form
         cv_file_path: cvFilePath || null,
-        cover_letter: formData.cover_letter || null,
+        cv_file_name: formData.cv_file?.name || null,
       };
 
       const { error: insertError } = await supabase
@@ -171,7 +171,9 @@ export const useJobApplications = () => {
     }
   };
 
-  const bulkImport = async (importData: any[]): Promise<BulkImportResult> => {
+  const bulkImport = async (
+    importData: Omit<JobApplication, 'id' | 'created_at' | 'updated_at'>[]
+  ): Promise<BulkImportResult> => {
     try {
       const { data, error } = await supabase
         .rpc('bulk_import_job_applications', {

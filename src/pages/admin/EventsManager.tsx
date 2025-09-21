@@ -1,14 +1,16 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Trash2, Plus, Calendar, Clock } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { Trash2, Edit, Eye, EyeOff, Calendar, MapPin, Upload, Image, Plus, Clock, Pencil } from 'lucide-react';
+import { generateUUID } from '@/utils/uuid';
 import { format, isAfter } from "date-fns";
 
 interface Event {
@@ -27,17 +29,19 @@ const EventsManager = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    event_date: "",
-    location: "",
+    title: '',
+    description: '',
+    event_date: '',
+    location: '',
+    image_url: '',
     is_featured: false,
-    is_published: true,
+    is_published: false
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
 
   useEffect(() => {
     fetchEvents();
@@ -58,6 +62,41 @@ const EventsManager = () => {
     setEvents(data || []);
   };
 
+  const handleFileUpload = async (file: File): Promise<string> => {
+    try {
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${generateUUID()}.${fileExt}`;
+      const filePath = `events/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('gallery-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('gallery-images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -71,29 +110,42 @@ const EventsManager = () => {
       return;
     }
 
-    let error;
+    try {
+      let imageUrl = formData.featured_image;
+      
+      // Upload new image if selected
+      if (imageFile) {
+        imageUrl = await handleFileUpload(imageFile);
+      }
+      
+      const submitData = {
+        ...formData,
+        image_url: imageUrl
+      };
+      
+      let error;
 
-    if (editingEvent) {
-      ({ error } = await supabase
-        .from("events")
-        .update(formData)
-        .eq("id", editingEvent.id));
-    } else {
-      ({ error } = await supabase
-        .from("events")
-        .insert(formData));
-    }
+      if (editingEvent) {
+        ({ error } = await supabase
+          .from("events")
+          .update(submitData)
+          .eq("id", editingEvent.id));
+      } else {
+        ({ error } = await supabase
+          .from("events")
+          .insert(submitData));
+      }
 
-    if (error) {
+      if (error) throw error;
+
+      toast({ title: `Event ${editingEvent ? 'updated' : 'created'} successfully!` });
+      setIsDialogOpen(false);
+      resetForm();
+      fetchEvents();
+    } catch (error) {
       console.error("Error saving event:", error);
       toast({ title: "Error saving event", variant: "destructive" });
-      return;
     }
-
-    toast({ title: `Event ${editingEvent ? 'updated' : 'created'} successfully!` });
-    setIsDialogOpen(false);
-    resetForm();
-    fetchEvents();
   };
 
   const handleDelete = async (id: string) => {
@@ -132,13 +184,16 @@ const EventsManager = () => {
 
   const resetForm = () => {
     setFormData({
-      title: "",
-      description: "",
-      event_date: "",
-      location: "",
+      title: '',
+      description: '',
+      event_date: '',
+      location: '',
+      image_url: '',
       is_featured: false,
-      is_published: true,
+      is_published: false
     });
+    setImageFile(null);
+    setImagePreview('');
     setEditingEvent(null);
   };
 
@@ -214,6 +269,35 @@ const EventsManager = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                   placeholder="Event location"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Featured Image</label>
+                <div className="space-y-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="cursor-pointer"
+                  />
+                  {formData.featured_image && (
+                    <Input
+                      value={formData.featured_image}
+                      onChange={(e) => setFormData(prev => ({ ...prev, featured_image: e.target.value }))}
+                      placeholder="Or enter image URL directly"
+                      type="url"
+                    />
+                  )}
+                  {(imagePreview || formData.featured_image) && (
+                    <div className="mt-2">
+                      <img
+                        src={imagePreview || formData.featured_image}
+                        alt="Preview"
+                        className="w-32 h-32 object-cover rounded-md border"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">

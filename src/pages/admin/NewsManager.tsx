@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-import { Pencil, Trash2, Plus, Eye, MessageCircle, Heart, FileText } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import { Trash2, Edit, Eye, EyeOff, Upload, Image, FileText, MessageCircle, Plus, Heart, Pencil } from 'lucide-react';
+import { generateUUID } from '@/utils/uuid';
 import { format } from "date-fns";
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface NewsPost {
   id: string;
@@ -41,16 +43,18 @@ const NewsManager = () => {
   const [editingArticle, setEditingArticle] = useState<NewsPost | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'articles' | 'comments'>('articles');
-  const { toast } = useToast();
+  const { toast: toastHook } = useToast();
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
-    title: "",
-    content: "",
-    excerpt: "",
-    featured_image: "",
-    is_published: false,
+    title: '',
+    excerpt: '',
+    content: '',
+    featured_image: '',
+    published: false
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
 
   useEffect(() => {
     fetchNewsArticles();
@@ -65,7 +69,7 @@ const NewsManager = () => {
 
     if (error) {
       console.error("Error fetching news:", error);
-      toast({ title: "Error fetching articles", variant: "destructive" });
+      toastHook({ title: "Error fetching articles", variant: "destructive" });
       return;
     }
 
@@ -81,7 +85,7 @@ const NewsManager = () => {
       .from("article_comments")
       .select(`
         *,
-        news_posts(title)
+        news_posts!article_comments_article_id_fkey(title)
       `)
       .order("created_at", { ascending: false });
 
@@ -105,55 +109,102 @@ const NewsManager = () => {
     setComments(commentsWithTitles);
   };
 
+  const handleFileUpload = async (file: File): Promise<string> => {
+    try {
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${generateUUID()}.${fileExt}`;
+      const filePath = `news/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('gallery-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('gallery-images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.title || !formData.content || !formData.excerpt) {
-      toast({ title: "Please fill in all required fields", variant: "destructive" });
+      toastHook({ title: "Please fill in all required fields", variant: "destructive" });
       return;
     }
 
     if (!user?.id) {
-      toast({ title: "You must be logged in to create articles", variant: "destructive" });
+      toastHook({ title: "You must be logged in to create articles", variant: "destructive" });
       return;
     }
 
-    const articleData = {
-      title: formData.title,
-      content: formData.content,
-      excerpt: formData.excerpt,
-      featured_image: formData.featured_image || null,
-      author_id: user.id,
-      category: null, // Optional field
-      tags: [], // Optional field
-      is_published: formData.is_published,
-      publication_date: formData.is_published ? new Date().toISOString() : null,
-      slug: formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-    };
+    try {
+      let imageUrl = formData.featured_image;
+      
+      // Upload new image if selected
+      if (imageFile) {
+        imageUrl = await handleFileUpload(imageFile);
+      }
 
-    let error;
+      const articleData = {
+        title: formData.title,
+        content: formData.content,
+        excerpt: formData.excerpt,
+        featured_image: imageUrl || null,
+        author_id: user.id,
+        category: null, // Optional field
+        tags: [], // Optional field
+        is_published: formData.is_published,
+        publication_date: formData.is_published ? new Date().toISOString() : null,
+        slug: formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      };
 
-    if (editingArticle) {
-      ({ error } = await supabase
-        .from("news_posts")
-        .update(articleData)
-        .eq("id", editingArticle.id));
-    } else {
-      ({ error } = await supabase
-        .from("news_posts")
-        .insert(articleData));
+      let error;
+
+      if (editingArticle) {
+        ({ error } = await supabase
+          .from("news_posts")
+          .update(articleData)
+          .eq("id", editingArticle.id));
+      } else {
+        ({ error } = await supabase
+          .from("news_posts")
+          .insert(articleData));
+      }
+
+      if (error) {
+        console.error("Error saving article:", error);
+        toastHook({ title: "Error saving article", variant: "destructive" });
+        return;
+      }
+
+      toastHook({ title: `Article ${editingArticle ? 'updated' : 'created'} successfully!` });
+      setIsDialogOpen(false);
+      resetForm();
+      fetchNewsArticles();
+    } catch (error) {
+      console.error('Error saving article:', error);
+      toastHook({ title: "Failed to save article", variant: "destructive" });
     }
-
-    if (error) {
-      console.error("Error saving article:", error);
-      toast({ title: "Error saving article", variant: "destructive" });
-      return;
-    }
-
-    toast({ title: `Article ${editingArticle ? 'updated' : 'created'} successfully!` });
-    setIsDialogOpen(false);
-    resetForm();
-    fetchNewsArticles();
   };
 
   const handleDelete = async (id: string) => {
@@ -166,11 +217,11 @@ const NewsManager = () => {
 
     if (error) {
       console.error("Error deleting article:", error);
-      toast({ title: "Error deleting article", variant: "destructive" });
+      toastHook({ title: "Error deleting article", variant: "destructive" });
       return;
     }
 
-    toast({ title: "Article deleted successfully!" });
+    toastHook({ title: "Article deleted successfully!" });
     fetchNewsArticles();
   };
 
@@ -182,11 +233,11 @@ const NewsManager = () => {
 
     if (error) {
       console.error("Error updating publish status:", error);
-      toast({ title: "Error updating article status", variant: "destructive" });
+      toastHook({ title: "Error updating article status", variant: "destructive" });
       return;
     }
 
-    toast({ title: `Article ${!article.is_published ? 'published' : 'unpublished'}!` });
+    toastHook({ title: `Article ${!article.is_published ? 'published' : 'unpublished'}!` });
     fetchNewsArticles();
   };
 
@@ -198,11 +249,11 @@ const NewsManager = () => {
 
     if (error) {
       console.error("Error updating comment:", error);
-      toast({ title: "Error updating comment", variant: "destructive" });
+      toastHook({ title: "Error updating comment", variant: "destructive" });
       return;
     }
 
-    toast({ title: `Comment ${approved ? 'approved' : 'rejected'}!` });
+    toastHook({ title: `Comment ${approved ? 'approved' : 'rejected'}!` });
     fetchComments();
   };
 
@@ -216,22 +267,24 @@ const NewsManager = () => {
 
     if (error) {
       console.error("Error deleting comment:", error);
-      toast({ title: "Error deleting comment", variant: "destructive" });
+      toastHook({ title: "Error deleting comment", variant: "destructive" });
       return;
     }
 
-    toast({ title: "Comment deleted successfully!" });
+    toastHook({ title: "Comment deleted successfully!" });
     fetchComments();
   };
 
   const resetForm = () => {
     setFormData({
-      title: "",
-      content: "",
-      excerpt: "",
-      featured_image: "",
-      is_published: false,
+      title: '',
+      excerpt: '',
+      content: '',
+      featured_image: '',
+      published: false
     });
+    setImageFile(null);
+    setImagePreview('');
     setEditingArticle(null);
   };
 
@@ -318,13 +371,32 @@ const NewsManager = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1">Featured Image URL</label>
-                    <Input
-                      value={formData.featured_image}
-                      onChange={(e) => setFormData(prev => ({ ...prev, featured_image: e.target.value }))}
-                      placeholder="https://example.com/image.jpg"
-                      type="url"
-                    />
+                    <label className="block text-sm font-medium mb-1">Featured Image</label>
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="cursor-pointer"
+                      />
+                      {formData.featured_image && (
+                        <Input
+                          value={formData.featured_image}
+                          onChange={(e) => setFormData(prev => ({ ...prev, featured_image: e.target.value }))}
+                          placeholder="Or enter image URL directly"
+                          type="url"
+                        />
+                      )}
+                      {(imagePreview || formData.featured_image) && (
+                        <div className="mt-2">
+                          <img
+                            src={imagePreview || formData.featured_image}
+                            alt="Preview"
+                            className="w-32 h-32 object-cover rounded-md border"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>

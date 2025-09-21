@@ -19,13 +19,14 @@ const jobApplicationSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
   address: z.string().min(10, 'Address must be at least 10 characters'),
+  post_office: z.string().min(1, 'Post office is required'),
   district: z.string().min(1, 'District is required'),
+  pincode: z.string().min(6, 'Pincode must be at least 6 digits'),
   designation: z.string().min(1, 'Designation is required'),
   subject: z.string().optional(),
   other_designation: z.string().optional(),
-  qualification: z.string().min(1, 'Qualification is required'),
+  qualifications: z.string().min(1, 'Qualification is required'),
   experience_years: z.number().min(0, 'Experience years must be 0 or greater'),
   previous_experience: z.string().optional(),
   why_join: z.string().min(50, 'Please provide at least 50 characters explaining why you want to join'),
@@ -57,13 +58,14 @@ const Careers: React.FC = () => {
       full_name: '',
       email: '',
       phone: '',
-      date_of_birth: '',
       address: '',
+      post_office: '',
       district: '',
+      pincode: '',
       designation: '',
       subject: '',
       other_designation: '',
-      qualification: '',
+      qualifications: '',
       experience_years: 0,
       previous_experience: '',
       why_join: '',
@@ -111,8 +113,25 @@ const Careers: React.FC = () => {
     }
 
     try {
+      // Combine previous_experience and why_join into cover_letter
+      const coverLetter = [data.previous_experience, data.why_join]
+        .filter(Boolean)
+        .join('\n\n');
+
       const formData: JobApplicationFormData = {
-        ...data,
+        full_name: data.full_name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        post_office: data.post_office,
+        district: data.district,
+        pincode: data.pincode,
+        designation: data.designation,
+        subject: data.subject,
+        other_designation: data.other_designation,
+        qualifications: data.qualifications,
+        experience_years: data.experience_years,
+        cover_letter: coverLetter,
         cv_file: cvFile,
       };
 
@@ -200,35 +219,19 @@ const Careers: React.FC = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter your phone number" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="date_of_birth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date of Birth *</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter your phone number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <FormField
                     control={form.control}
@@ -244,19 +247,49 @@ const Careers: React.FC = () => {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="district"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>District *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter your district" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="post_office"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Post Office *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter post office" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="district"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>District *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter your district" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="pincode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pincode *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter pincode" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 {/* Professional Information */}
@@ -331,7 +364,7 @@ const Careers: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="qualification"
+                      name="qualifications"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Highest Qualification *</FormLabel>

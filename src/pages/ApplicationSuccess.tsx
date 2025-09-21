@@ -31,17 +31,24 @@ export function ApplicationSuccess() {
   }, [applicationType]);
 
   const downloadApplicationPDF = async () => {
-    if (!applicationNumber || !applicationType || !mobileNumber) return;
+    if (!applicationNumber || !applicationType || !mobileNumber) {
+      console.log('❌ Missing required parameters for PDF generation');
+      return;
+    }
 
+    console.log('🔄 Starting PDF generation...', { applicationNumber, applicationType, mobileNumber });
     setDownloadingPdf(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-application-pdf', {
         body: { applicationNumber, applicationType, mobileNumber }
       });
 
+      console.log('📄 PDF function response:', { data, error });
+
       if (error) throw error;
 
       if (data?.htmlContent) {
+        console.log('✅ PDF HTML content received, opening print window...');
         // Create a new window with the HTML content for printing/saving as PDF
         const printWindow = window.open('', '_blank');
         if (printWindow) {
@@ -49,9 +56,14 @@ export function ApplicationSuccess() {
           printWindow.document.close();
           // Auto-trigger print dialog which allows saving as PDF
           setTimeout(() => {
+            console.log('🖨️ Triggering print dialog...');
             printWindow.print();
           }, 500);
+        } else {
+          console.error('❌ Failed to open print window');
         }
+      } else {
+        console.warn('⚠️ No HTML content received from PDF function');
       }
 
       toast({
@@ -59,7 +71,7 @@ export function ApplicationSuccess() {
         description: "Application summary PDF is ready for download",
       });
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('❌ Error generating PDF:', error);
       toast({
         title: "Download Failed",
         description: "Unable to generate PDF. Please try again.",
@@ -73,16 +85,22 @@ export function ApplicationSuccess() {
   useEffect(() => {
     // Redirect if no application number
     if (!applicationNumber || !applicationType || !mobileNumber) {
+      console.log('❌ Missing parameters, redirecting to home');
       navigate("/");
       return;
     }
 
+    console.log('⏰ Setting up auto-download timer for 2 seconds...');
     // Auto-download PDF summary after a short delay
     const timer = setTimeout(() => {
+      console.log('🚀 Auto-download timer triggered, starting PDF generation...');
       downloadApplicationPDF();
     }, 2000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      console.log('🧹 Cleaning up auto-download timer');
+      clearTimeout(timer);
+    };
   }, [applicationNumber, applicationType, navigate]);
 
   if (!applicationNumber || !applicationType || !mobileNumber) {

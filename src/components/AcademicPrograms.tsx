@@ -25,7 +25,7 @@ const AcademicPrograms = () => {
   };
 
   useEffect(() => {
-    const fetchPrograms = async () => {
+    const fetchPrograms = async (retryCount = 0) => {
       try {
         const { data, error } = await supabase
           .from("academic_programs")
@@ -38,12 +38,24 @@ const AcademicPrograms = () => {
         setPrograms(data || []);
       } catch (error) {
         console.error("Error fetching academic programs:", error);
+        
+        // Retry logic for network errors
+        if (retryCount < 2 && (error as any)?.message?.includes('aborted')) {
+          console.log(`Retrying academic programs request (attempt ${retryCount + 1})...`);
+          setTimeout(() => fetchPrograms(retryCount + 1), 1000 * (retryCount + 1));
+          return;
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPrograms();
+    // Add delay to stagger requests and prevent network congestion
+    const timer = setTimeout(() => {
+      fetchPrograms();
+    }, 400);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
@@ -77,7 +89,7 @@ const AcademicPrograms = () => {
 
         {/* Programs Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {programs.map((program) => {
+          {programs.slice(0, 3).map((program) => {
             const IconComponent = getIcon(program.program_title);
             return (
               <div

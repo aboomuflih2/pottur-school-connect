@@ -137,7 +137,7 @@ const ContactPageManager = () => {
       const typeContents = contents.filter(c => c.content_type === newContent.content_type);
       const maxOrder = Math.max(...typeContents.map(c => c.display_order), 0);
       
-      const additionalData: any = {};
+      const additionalData: ContactPageContent['additional_data'] = {};
       if (newContent.phone) additionalData.phone = newContent.phone;
       if (newContent.email) additionalData.email = newContent.email;
       if (newContent.lat && newContent.lng) {
@@ -301,7 +301,7 @@ const ContactPageManager = () => {
     }
   };
 
-  const updateContentField = (id: string, field: keyof ContactPageContent, value: any) => {
+  const updateContentField = (id: string, field: keyof ContactPageContent, value: string) => {
     setContents(prev => prev.map(content => 
       content.id === id ? { ...content, [field]: value } : content
     ));
@@ -386,7 +386,10 @@ const ContactPageManager = () => {
       {/* Filter */}
       <div className="flex gap-4 items-center">
         <Label>Filter by type:</Label>
-        <Select value={selectedType} onValueChange={(value: any) => setSelectedType(value)}>
+        <Select 
+          value={selectedType} 
+          onValueChange={(value: ContactPageContent['content_type'] | 'all') => setSelectedType(value)}
+        >
           <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>
@@ -414,7 +417,9 @@ const ContactPageManager = () => {
                 <Label htmlFor="content_type">Content Type</Label>
                 <Select 
                   value={newContent.content_type} 
-                  onValueChange={(value: any) => setNewContent(prev => ({ ...prev, content_type: value }))}
+                  onValueChange={(value: ContactPageContent['content_type']) => 
+                    setNewContent(prev => ({ ...prev, content_type: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />

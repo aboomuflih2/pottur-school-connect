@@ -98,7 +98,7 @@ export function KGStdApplicationForm() {
           .from('kg_std_applications')
           .insert([{
             application_number: applicationNumber,
-            fullname_name: data.fullName,
+            full_name: data.fullName,
             gender: data.gender,
             date_of_birth: data.dateOfBirth,
             father_name: data.fatherName,
@@ -109,9 +109,16 @@ export function KGStdApplicationForm() {
             pincode: data.pincode,
             district: data.district,
             mobile_number: data.mobileNumber,
+            stage: data.stage || null,
+            need_madrassa: data.needMadrassa || false,
+            previous_madrassa: data.previousMadrassa || null,
+            has_siblings: data.hasSiblings || false,
+            siblings_names: data.siblingsNames || null,
+            email: data.email || null,
+            previous_school: data.previousSchool || null,
           }]);
         if (!error) {
-          navigate(`/admissions/success?type=kg-std&app=${encodeURIComponent(applicationNumber)}`);
+          navigate(`/admissions/success?type=kg-std&app=${encodeURIComponent(applicationNumber)}&mobile=${encodeURIComponent(data.mobileNumber)}`);
           return;
         }
         lastError = error;
@@ -122,7 +129,7 @@ export function KGStdApplicationForm() {
             .from('kg_std_applications')
             .insert([{
               application_number: applicationNumber,
-              fullname_name: data.fullName,
+              full_name: data.fullName,
               gender: data.gender,
               date_of_birth: data.dateOfBirth,
               father_name: data.fatherName,
@@ -138,7 +145,7 @@ export function KGStdApplicationForm() {
               previous_school: data.previousSchool || null,
             }]);
           if (!legacyError) {
-            navigate(`/admissions/success?type=kg-std&app=${encodeURIComponent(applicationNumber)}`);
+            navigate(`/admissions/success?type=kg-std&app=${encodeURIComponent(applicationNumber)}&mobile=${encodeURIComponent(data.mobileNumber)}`);
             return;
           }
           lastError = legacyError;

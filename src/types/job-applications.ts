@@ -27,6 +27,8 @@ export interface JobApplicationFormData {
   qualifications: string;
   district: string;
   address: string;
+  post_office: string;
+  pincode: string;
   cv_file?: File;
   cover_letter?: string;
 }

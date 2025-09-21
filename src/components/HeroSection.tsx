@@ -1,35 +1,56 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-school-building.jpg";
 import studentsImage from "@/assets/students-studying.jpg";
 
-import type { Database } from "@/integrations/supabase/types";
-type DBHeroSlide = Database["public"]["Tables"]["hero_slides"]["Row"];
+interface HeroSlide {
+  id: string;
+  title: string;
+  subtitle: string;
+  image_url: string | null;
+  button_text: string;
+  button_url: string;
+  order_index: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [slides, setSlides] = useState<DBHeroSlide[]>([]);
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadSlides();
+    // Add small delay to stagger requests and prevent network congestion
+    const timer = setTimeout(() => {
+      loadSlides();
+    }, 200);
+    
+    return () => clearTimeout(timer);
   }, []);
 
-  const loadSlides = async () => {
+  const loadSlides = async (retryCount = 0) => {
     try {
-      const { data, error } = await supabase
-        .from('hero_slides')
-        .select('*')
-        .eq('is_active', true)
-        .order('order_index');
-
-      if (error) throw error;
+      const response = await fetch('http://localhost:8001/api/content/hero-slides/');
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       setSlides(data || []);
     } catch (error) {
       console.error('Error loading slides:', error);
+      
+      // Retry logic for network errors
+      if (retryCount < 2 && (error as any)?.message?.includes('aborted')) {
+        console.log(`Retrying slides request (attempt ${retryCount + 1})...`);
+        setTimeout(() => loadSlides(retryCount + 1), 1000 * (retryCount + 1));
+        return;
+      }
+      
       // Fallback to default slides
       setSlides([
         {
@@ -62,7 +83,7 @@ const HeroSection = () => {
     }
   };
 
-  const getSlideImage = (slide: DBHeroSlide, index: number) => {
+  const getSlideImage = (slide: HeroSlide, index: number) => {
     if (slide.image_url) {
       return slide.image_url;
     }
@@ -126,6 +147,8 @@ const HeroSection = () => {
                 alt={slide.title}
                 className="w-full h-full object-cover"
                 loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchpriority={index === 0 ? ("high" as any) : ("auto" as any)}
               />
               <div className="absolute inset-0 bg-gradient-hero"></div>
             </div>

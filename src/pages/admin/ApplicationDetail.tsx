@@ -268,9 +268,25 @@ export default function ApplicationDetail() {
         if (error) throw error;
       }
 
+      // Automatically update application status to 'interview_complete' when marks are saved
+      if (application.status !== "interview_complete") {
+        const tableName = type === "kg_std" ? "kg_std_applications" : "plus_one_applications";
+        
+        const { error: statusError } = await supabase
+          .from(tableName)
+          .update({ status: "interview_complete" })
+          .eq("id", application.id);
+
+        if (statusError) throw statusError;
+
+        // Update local state
+        setApplication({ ...application, status: "interview_complete" });
+        setNewStatus("interview_complete");
+      }
+
       toast({
         title: "Success",
-        description: "Interview marks saved successfully",
+        description: "Interview marks saved and status updated to Interview Complete. Mark List PDF is now available for download.",
       });
       
       await fetchInterviewSubjects(); // Refresh the data

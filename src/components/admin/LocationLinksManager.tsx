@@ -254,7 +254,11 @@ const LocationLinksManager = () => {
     }
   };
 
-  const updateLocationField = (id: string, field: keyof ContactLocation, value: any) => {
+  const updateLocationField = (
+    id: string,
+    field: keyof ContactLocation,
+    value: string | ContactLocation['location_type']
+  ) => {
     setLocations(prev => prev.map(location => 
       location.id === id ? { ...location, [field]: value } : location
     ));
@@ -316,7 +320,9 @@ const LocationLinksManager = () => {
                 <Label htmlFor="location_type">Location Type</Label>
                 <Select 
                   value={newLocation.location_type} 
-                  onValueChange={(value: any) => setNewLocation(prev => ({ ...prev, location_type: value }))}
+                  onValueChange={(value: ContactLocation['location_type']) => 
+                    setNewLocation(prev => ({ ...prev, location_type: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -486,7 +492,9 @@ const LocationLinksManager = () => {
                         <Label>Location Type</Label>
                         <Select 
                           value={location.location_type} 
-                          onValueChange={(value: any) => updateLocationField(location.id, 'location_type', value)}
+                          onValueChange={(value: ContactLocation['location_type']) => 
+                            updateLocationField(location.id, 'location_type', value)
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue />

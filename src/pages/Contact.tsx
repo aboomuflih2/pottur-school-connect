@@ -4,7 +4,7 @@ import { Phone, Mail, MapPin, Clock, Users, GraduationCap, ExternalLink, Home } 
 import ContactForm from "@/components/ContactForm";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ElementType } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AdmissionsModal } from "@/components/admissions/AdmissionsModal";
@@ -14,10 +14,21 @@ interface ContactPageContent {
   content_type: string;
   title: string;
   content: string;
-  additional_data?: any;
+  additional_data?: ContactAdditionalData;
   display_order: number;
   is_active: boolean;
 }
+
+type ContactAdditionalData = {
+  primary?: string;
+  departments?: Array<{
+    icon: ElementType;
+    title: string;
+    description: string;
+    contact: string;
+    email: string;
+  }>;
+};
 
 interface ContactAddress {
   id: string;
