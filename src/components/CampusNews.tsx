@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { djangoAPI } from "@/lib/django-api";
 
 interface NewsPost {
   id: string;
@@ -25,21 +25,20 @@ const CampusNews = () => {
     try {
       setLoading(true);
       setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .from('news_posts')
-        .select('id, title, excerpt, featured_image, publication_date')
-        .eq('is_published', true)
-        .order('publication_date', { ascending: false })
-        .limit(3);
-
-      if (fetchError) {
-        console.error('Error fetching news:', fetchError);
-        setError('Failed to load news articles');
-        return;
-      }
-
-      setNewsItems(data || []);
+      const rows = await djangoAPI.getNewsPosts();
+      const items: NewsPost[] = (rows || [])
+        .filter((r: any) => (r.status ? r.status === 'published' : true))
+        .sort((a: any, b: any) => new Date(b.published_at || b.publication_date || b.created_at).getTime() - new Date(a.published_at || a.publication_date || a.created_at).getTime())
+        .slice(0, 3)
+        .map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          excerpt: r.excerpt || '',
+          featured_image: r.featured_image_url || r.featured_image || null,
+          publication_date: r.published_at || r.publication_date || r.created_at,
+          slug: r.slug,
+        }));
+      setNewsItems(items);
     } catch (err) {
       console.error('Error fetching news:', err);
       setError('Failed to load news articles');

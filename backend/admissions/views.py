@@ -13,10 +13,20 @@ class KgStdApplicationViewSet(viewsets.ModelViewSet):
     serializer_class = KgStdApplicationSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        if self.action in ['create']:
+            return [AllowAny()]
+        return super().get_permissions()
+
 class PlusOneApplicationViewSet(viewsets.ModelViewSet):
     queryset = PlusOneApplication.objects.all().order_by('-created_at')
     serializer_class = PlusOneApplicationSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create']:
+            return [AllowAny()]
+        return super().get_permissions()
 
 class InterviewSubjectViewSet(viewsets.ModelViewSet):
     queryset = InterviewSubject.objects.filter(is_active=True).order_by('subject_name')

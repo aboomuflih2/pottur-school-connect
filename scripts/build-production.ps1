@@ -78,7 +78,7 @@ function Test-Environment {
     }
     
     # Check required environment variables
-    $RequiredVars = @("VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY", "VITE_APP_DOMAIN")
+    $RequiredVars = @("VITE_API_BASE_URL", "VITE_APP_DOMAIN")
     $EnvContent = Get-Content ".env.production" -Raw
     
     foreach ($Var in $RequiredVars) {

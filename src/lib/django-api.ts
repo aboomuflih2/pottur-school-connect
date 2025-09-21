@@ -1,143 +1,110 @@
 // Django API Client Configuration
-import {
-  mockHeroSlides,
-  mockBreakingNews,
-  mockSchoolStats,
-  mockSocialLinks,
-  mockTestimonials,
-  mockNews,
-  mockAcademicPrograms
-} from './mock-data';
+// Centralized client for the Django REST API used by the frontend.
+// Uses environment variable VITE_API_BASE_URL when available.
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const DEFAULT_API_BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:8000/api';
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 class DjangoAPIClient {
   private baseURL: string;
 
-  constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL;
+  constructor(baseURL: string = DEFAULT_API_BASE_URL) {
+    this.baseURL = baseURL.replace(/\/$/, '');
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return response.json();
-    } catch (error) {
-      console.warn(`API request failed for ${endpoint}:`, error);
-      throw error;
+    const init: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      ...options,
+    };
+    const res = await fetch(url, init);
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`API ${res.status} ${res.statusText} at ${endpoint}: ${text}`);
     }
+    // Some endpoints may 204 with no content
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) return undefined as unknown as T;
+    return res.json();
   }
 
-  // Hero Slides API
+  // Content APIs
   async getHeroSlides() {
-    try {
-      const response = await this.request<{results: any[]}>('/content/hero-slides/');
-      return response.results.length > 0 ? response.results : mockHeroSlides;
-    } catch (error) {
-      console.warn('Using mock hero slides data');
-      return mockHeroSlides;
-    }
+    // GET /api/content/hero-slides/
+    const response = await this.request<{results: any[]}>('/content/hero-slides/');
+    return response?.results || [];
   }
 
-  // Breaking News API
   async getBreakingNews() {
-    try {
-      const response = await this.request<{results: any[]}>('/content/breaking-news/');
-      return response.results.length > 0 ? response.results[0] : mockBreakingNews;
-    } catch (error) {
-      console.warn('Using mock breaking news data');
-      return mockBreakingNews;
-    }
+    // GET /api/content/breaking-news/
+    const response = await this.request<{results: any[]}>('/content/breaking-news/');
+    const items = response?.results || [];
+    return items?.[0] || null;
   }
 
-  // School Stats API
   async getSchoolStats() {
-    try {
-      const response = await this.request<{results: any[]}>('/content/school-stats/');
-      return response.results.length > 0 ? response.results : mockSchoolStats;
-    } catch (error) {
-      console.warn('Using mock school stats data');
-      return mockSchoolStats;
-    }
+    // GET /api/content/school-stats/
+    const response = await this.request<{results: any[]}>('/content/school-stats/');
+    return response?.results || [];
   }
 
-  // Social Media Links API
   async getSocialMediaLinks() {
-    try {
-      const response = await this.request<{results: any[]}>('/content/social-media-links/');
-      return response.results.length > 0 ? response.results : mockSocialLinks;
-    } catch (error) {
-      console.warn('Using mock social links data');
-      return mockSocialLinks;
-    }
+    // GET /api/content/social-media-links/
+    const response = await this.request<{results: any[]}>('/content/social-media-links/');
+    return response?.results || [];
   }
 
-  // Testimonials API
   async getTestimonials() {
-    try {
-      const response = await this.request<{results: any[]}>('/content/testimonials/');
-      return response.results.length > 0 ? response.results : mockTestimonials;
-    } catch (error) {
-      console.warn('Using mock testimonials data');
-      return mockTestimonials;
-    }
+    // GET /api/content/testimonials/
+    const response = await this.request<{results: any[]}>('/content/testimonials/');
+    return response?.results || [];
   }
 
-  // News API
-  async getNews() {
-    try {
-      const response = await this.request<{results: any[]}>('/news/articles/');
-      return response.results.length > 0 ? response.results : mockNews;
-    } catch (error) {
-      console.warn('Using mock news data');
-      return mockNews;
-    }
-  }
-
-  // News API methods
-  async getLatestNews(limit: number = 3) {
-    return this.request(`/news/?limit=${limit}`);
-  }
-
-  // Academic Programs API
-  async getAcademicPrograms() {
-    try {
-      const response = await this.request<{results: any[]}>('/academics/programs/');
-      return response.results.length > 0 ? response.results : mockAcademicPrograms;
-    } catch (error) {
-      console.warn('Using mock academic programs data');
-      return mockAcademicPrograms;
-    }
-  }
-
-  // Events API methods
-  async getEvents() {
-    return this.request('/events/');
-  }
-
-  // Gallery API methods
-  async getGalleryImages() {
-    return this.request('/gallery/');
-  }
-
-  // Admissions API methods
-  async submitApplication(data: any) {
-    return this.request('/admissions/applications/', {
+  async createContactSubmission(payload: {
+    name: string;
+    email: string;
+    phone?: string;
+    subject: string;
+    message: string;
+  }) {
+    // POST /api/content/contact-submissions/
+    return this.request<any>('/content/contact-submissions/', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
+  }
+
+  // News APIs
+  async getNewsPosts() {
+    // GET /api/news/posts/
+    const response = await this.request<{results: any[]}>('/news/posts/');
+    return response?.results || [];
+  }
+
+  // Events APIs
+  async getEvents() {
+    // GET /api/events/events/
+    const response = await this.request<{results: any[]}>('/events/events/');
+    return response?.results || [];
+  }
+
+  // Gallery APIs
+  async getGalleryPhotos() {
+    // GET /api/gallery/photos/
+    const response = await this.request<{results: any[]}>('/gallery/photos/');
+    return response?.results || [];
+  }
+
+  // Academics APIs
+  async getAcademicPrograms() {
+    // GET /api/academics/programs/
+    const response = await this.request<{results: any[]}>('/academics/programs/');
+    return response?.results || [];
   }
 }
 

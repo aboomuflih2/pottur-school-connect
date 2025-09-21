@@ -1,14 +1,12 @@
-import { useState, useEffect, memo, useMemo, useCallback } from "react";
-import { Megaphone, ExternalLink, Link } from "lucide-react";
+import { useState, memo, useMemo, useCallback } from "react";
+import { Megaphone } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { djangoAPI } from "@/lib/django-api";
 
 interface BreakingNewsData {
-  message: string;
-  link_url?: string;
-  link_text?: string;
-  is_external?: boolean;
-  is_active: boolean;
+  title?: string;
+  content?: string;
+  is_active?: boolean;
 }
 
 // Skeleton loader component
@@ -30,48 +28,13 @@ BreakingNewsSkeleton.displayName = 'BreakingNewsSkeleton';
 
 // Optimized data fetching function
 const fetchBreakingNews = async (): Promise<BreakingNewsData | null> => {
-  console.log('🔍 Fetching breaking news data...');
-  const { data, error } = await supabase
-    .from('breaking_news')
-    .select('message, link_url, link_text, is_external, is_active')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (error) {
-    console.log('❌ Breaking news fetch error:', error);
-    if (error.code === 'PGRST116') {
-      // No rows returned
-      console.log('ℹ️ No breaking news found');
-      return null;
-    }
-    throw error;
-  }
-
-  if (!data) {
-    console.log('⚠️ No data returned from breaking news query');
-    return null;
-  }
-
-  console.log('✅ Breaking news data fetched:', data);
-
-  const displayText = data.message || '';
-  if (!displayText.trim()) {
-    console.log('⚠️ Empty message in breaking news data');
-    return null;
-  }
-
-  const result = {
-    message: displayText,
-    link_url: data.link_url || undefined,
-    link_text: data.link_text || undefined,
-    is_external: data.is_external || false,
-    is_active: data.is_active || false
+  const item = await djangoAPI.getBreakingNews();
+  if (!item) return null;
+  return {
+    title: item.title,
+    content: item.content,
+    is_active: item.is_active,
   };
-  
-  console.log('📰 Processed breaking news:', result);
-  return result;
 };
 
 const BreakingNews = memo(() => {
@@ -88,22 +51,8 @@ const BreakingNews = memo(() => {
 
   // Query state tracking
 
-  // Optimized click handler with useCallback
-  const handleLinkClick = useCallback(() => {
-    if (newsData?.link_url) {
-      if (newsData.is_external) {
-        window.open(newsData.link_url, '_blank', 'noopener,noreferrer');
-      } else {
-        window.location.href = newsData.link_url;
-      }
-    }
-  }, [newsData?.link_url, newsData?.is_external]);
-
-  // Memoized clickable state
-  const isClickable = useMemo(() => 
-    Boolean(newsData?.link_url && newsData?.link_text), 
-    [newsData?.link_url, newsData?.link_text]
-  );
+  // Memoized display text
+  const displayText = useMemo(() => newsData?.title || newsData?.content || '', [newsData]);
 
   // Show skeleton loader while loading
   if (isLoading) {
@@ -121,7 +70,7 @@ const BreakingNews = memo(() => {
   }
 
   // Show no data state for debugging
-  if (!newsData) {
+  if (!newsData || !displayText) {
     // No breaking news data available
     return (
       <div className="bg-gray-500 text-white py-3 px-4">
@@ -144,23 +93,7 @@ const BreakingNews = memo(() => {
         {/* Scrolling news content */}
         <div className="flex-1 overflow-hidden">
           <div className="animate-scroll whitespace-nowrap">
-            <span className="inline-block font-medium">
-              {newsData.message}
-              {isClickable && (
-                <button
-                  onClick={handleLinkClick}
-                  className="ml-4 inline-flex items-center text-gray-800 hover:text-gray-900 underline transition-colors font-semibold"
-                  aria-label={`${newsData.link_text} - ${newsData.is_external ? 'Opens in new tab' : 'Navigate to page'}`}
-                >
-                  {newsData.link_text}
-                  {newsData.is_external ? (
-                    <ExternalLink className="ml-1 h-3 w-3" />
-                  ) : (
-                    <Link className="ml-1 h-3 w-3" />
-                  )}
-                </button>
-              )}
-            </span>
+            <span className="inline-block font-medium">{displayText}</span>
           </div>
         </div>
       </div>
@@ -171,4 +104,3 @@ const BreakingNews = memo(() => {
 BreakingNews.displayName = 'BreakingNews';
 
 export default BreakingNews;
-

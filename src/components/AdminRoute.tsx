@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -16,14 +15,9 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
   useEffect(() => {
     const verifyAdmin = async () => {
       console.log('🔍 AdminRoute verifyAdmin - user:', user);
-      
-      // Double-check session state
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('📋 AdminRoute session check:', { session: session?.user?.email, sessionError });
-      
-      if (user && session) {
-        console.log('🔍 AdminRoute calling checkAdminRole for user:', user.id);
-        const adminStatus = await checkAdminRole(user.id);
+      if (user) {
+        console.log('🔍 AdminRoute calling checkAdminRole for user');
+        const adminStatus = await checkAdminRole();
         console.log('👤 AdminRoute admin status:', adminStatus);
         setIsAdmin(adminStatus);
       } else {

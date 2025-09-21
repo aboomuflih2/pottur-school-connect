@@ -12,7 +12,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Send } from "lucide-react";
 
 const formSchema = z.object({
@@ -69,45 +68,30 @@ export function PlusOneApplicationForm() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      let tries = 0;
-      let lastError: Error | null = null;
-      while (tries < 3) {
-        const applicationNumber = generateApplicationNumber();
-        const { error } = await supabase
-          .from('plus_one_applications')
-          .insert([{
-            application_number: applicationNumber,
-            full_name: data.fullName,
-            gender: data.gender,
-            date_of_birth: data.dateOfBirth,
-            father_name: data.fatherName,
-            mother_name: data.motherName,
-            house_name: data.houseName,
-            landmark: data.landmark || null,
-            post_office: data.postOffice,
-            village: data.village,
-            pincode: data.pincode,
-            district: data.district,
-            email: data.email || null,
-            mobile_number: data.mobileNumber,
-            tenth_school: data.tenthSchool,
-            board: data.board,
-            exam_roll_number: data.examRollNumber,
-            exam_year: data.examYear,
-            stream: data.stream,
-            has_siblings: data.hasSiblings,
-            siblings_names: data.siblingsNames || null,
-          }]);
-        if (!error) {
-          navigate(`/admissions/success?type=plus-one&app=${encodeURIComponent(applicationNumber)}&mobile=${encodeURIComponent(data.mobileNumber)}`);
-          return;
-        }
-        lastError = error;
-        const msg = error?.message || "";
-        if (!(msg.includes('duplicate') || msg.includes('unique') || msg.includes('23505'))) break;
-        tries++;
-      }
-      throw lastError || new Error('Failed to submit application');
+      const applicationNumber = generateApplicationNumber();
+      const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api';
+      const payload = {
+        student_name: data.fullName,
+        date_of_birth: data.dateOfBirth,
+        gender: data.gender === 'boy' ? 'male' : 'female',
+        parent_name: `${data.fatherName} & ${data.motherName}`,
+        parent_email: data.email || undefined,
+        parent_phone: data.mobileNumber,
+        address: `${data.houseName}${data.landmark ? ', ' + data.landmark : ''}, ${data.postOffice}, ${data.village}, ${data.district} - ${data.pincode}`,
+        previous_school: data.tenthSchool,
+        sslc_marks: 0,
+        stream_preference: data.stream.toLowerCase(),
+        subjects_selected: '',
+        notes: data.siblingsNames || undefined,
+      } as any;
+      const resp = await fetch(`${base}/admissions/plus-one-applications/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      navigate(`/admissions/success?type=plus-one&app=${encodeURIComponent(applicationNumber)}&mobile=${encodeURIComponent(data.mobileNumber)}`);
+      return;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to submit application. Please try again.";
       toast({

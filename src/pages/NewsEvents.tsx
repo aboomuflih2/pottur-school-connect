@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import { AdmissionsModal } from "@/components/admissions/AdmissionsModal";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { djangoAPI } from "@/lib/django-api";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -84,89 +84,55 @@ const NewsEvents = () => {
 
   // When opening an article, determine if current client already liked it
   useEffect(() => {
-    const checkLiked = async () => {
-      if (!selectedArticle) return;
-      try {
-        const clientId = getClientId();
-        const { count, error } = await supabase
-          .from("article_likes")
-          .select("id", { count: "exact", head: true })
-          .eq("article_id", selectedArticle.id)
-          .eq("user_ip", clientId);
-        if (!error) setIsLiked((count ?? 0) > 0);
-      } catch {
-        // ignore check failures
-      }
-    };
-    checkLiked();
+    // Likes check disabled (requires auth on Django)
   }, [selectedArticle]);
 
   const fetchNewsArticles = async () => {
-    const { data, error } = await supabase
-      .from("news_posts")
-      .select("*")
-      .eq("is_published", true)
-      .order("publication_date", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching news:", error);
-      return;
+    try {
+      const rows = await djangoAPI.getNewsPosts();
+      const items: NewsPost[] = (rows || [])
+        .filter((r: any) => (r.status ? r.status === 'published' : true))
+        .sort((a: any, b: any) => new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime())
+        .map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          content: r.content,
+          excerpt: r.excerpt || '',
+          featured_image: r.featured_image_url || r.featured_image || null,
+          publication_date: r.published_at || r.created_at,
+          author: r.author_name || 'Admin',
+          like_count: 0,
+        }));
+      setNewsArticles(items);
+    } catch (e) {
+      console.error('Error fetching news:', e);
     }
-
-    setNewsArticles(data || []);
   };
 
   const fetchEvents = async () => {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .eq("is_published", true)
-      .order("event_date", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching events:", error);
-      return;
+    try {
+      const rows = await djangoAPI.getEvents();
+      const items: Event[] = (rows || [])
+        .filter((r: any) => r.is_published)
+        .sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
+        .map((r: any) => ({ id: r.id, title: r.title, description: r.description, event_date: r.event_date, location: r.location }));
+      setEvents(items);
+    } catch (e) {
+      console.error('Error fetching events:', e);
     }
-
-    setEvents(data || []);
   };
 
   const fetchGalleryPhotos = async () => {
-    const { data, error } = await supabase
-      .from("gallery_photos")
-      .select("*")
-
-      .order("display_order", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching gallery:", error);
-      return;
+    try {
+      const rows = await djangoAPI.getGalleryPhotos();
+      setGalleryPhotos((rows || []).map((r: any) => ({ id: r.id, image_url: r.image_url, title: r.title, description: r.description, display_order: r.order_index || 0 })));
+    } catch (e) {
+      console.error('Error fetching gallery:', e);
     }
-
-    setGalleryPhotos(data || []);
   };
 
-  const fetchComments = async (articleId: string) => {
-    const { data, error } = await supabase
-      .from("article_comments")
-      .select("*")
-      .eq("article_id", articleId)
-      .eq("is_approved", true)
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching comments:", error);
-      return;
-    }
-
-    const normalized = (data ?? []).map((row) => ({
-      id: row.id,
-      author_name: row.author_name,
-      comment_text: row.comment_text ?? row.comment_content,
-      created_at: row.created_at,
-    })) as Comment[];
-
-    setComments(normalized);
+  const fetchComments = async (_articleId: string) => {
+    setComments([]);
   };
 
   const refreshLikeCount = async (articleId: string) => {
@@ -186,31 +152,8 @@ const NewsEvents = () => {
     }
   };
 
-  const handleLike = async (articleId: string) => {
-    if (isLiked) return;
-    const clientId = getClientId();
-    const { error } = await supabase
-      .from("article_likes")
-      .insert({ article_id: articleId, user_ip: clientId });
-
-    if (!error) {
-      setIsLiked(true);
-      await refreshLikeCount(articleId);
-      toast({ title: "Thanks for liking this article!" });
-      return;
-    }
-
-    // Handle duplicate like or RLS errors gracefully
-    const msg = error instanceof Error ? error.message : "";
-    if (msg.includes("unique") || msg.includes("duplicate") || msg.includes("23505")) {
-      setIsLiked(true);
-      await refreshLikeCount(articleId);
-      toast({ title: "You already liked this article." });
-    } else if (msg.toLowerCase().includes("row-level security") || msg.toLowerCase().includes("permission")) {
-      toast({ title: "Unable to like right now", description: "Please sign in and try again.", variant: "destructive" });
-    } else {
-      toast({ title: "Unable to like right now", description: msg || "Please try again later.", variant: "destructive" });
-    }
+  const handleLike = async (_articleId: string) => {
+    toast({ title: "Sign in required to like articles" });
   };
 
   const handleComment = async () => {
@@ -592,4 +535,3 @@ const NewsEvents = () => {
 };
 
 export default NewsEvents;
-

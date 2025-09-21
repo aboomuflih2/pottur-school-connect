@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { supabase } from "@/integrations/supabase/client";
+import { djangoAPI } from "@/lib/django-api";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Database } from "@/integrations/supabase/types";
 import { AdmissionsModal } from "@/components/admissions/AdmissionsModal";
-
-type AcademicProgram = Database["public"]["Tables"]["academic_programs"]["Row"];
+ 
+type AcademicProgram = {
+  id: string;
+  program_title: string;
+  short_description?: string | null;
+  full_description?: string | null;
+  subjects?: string[];
+  main_image?: string | null;
+  duration?: string | null;
+};
 
 const Academics = () => {
   const [programs, setPrograms] = useState<AcademicProgram[]>([]);
@@ -16,25 +23,17 @@ const Academics = () => {
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
-        const { data, error } = await supabase
-          .from("academic_programs")
-          .select("*")
-          .eq("is_active", true)
-          .order("display_order");
-
-        if (error) throw error;
-        
-        // Map database columns to frontend interface
-        const mappedPrograms = (data || []).map(program => ({
-          ...program,
-          program_title: program.program_title || program.program_name,
-          short_description: program.short_description || program.program_description,
-          full_description: program.full_description || program.program_description,
-          subjects: program.subjects || [],
-          main_image: program.main_image
+        const rows = await djangoAPI.getAcademicPrograms();
+        const mapped: AcademicProgram[] = (rows || []).map((r: any) => ({
+          id: r.id,
+          program_title: r.name,
+          short_description: r.description,
+          full_description: r.description,
+          subjects: r.core_subjects || [],
+          main_image: r.image_url || null,
+          duration: r.duration_years ? `${r.duration_years} years${r.duration_months ? ` ${r.duration_months} months` : ''}` : null,
         }));
-        
-        setPrograms(mappedPrograms);
+        setPrograms(mapped);
       } catch (error) {
         console.error("Error fetching academic programs:", error);
       } finally {

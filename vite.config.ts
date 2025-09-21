@@ -39,7 +39,6 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-select',
           ],
-          supabase: ['@supabase/supabase-js'],
           query: ['@tanstack/react-query'],
           charts: ['recharts'],
           carousel: ['embla-carousel-react'],
@@ -72,7 +71,6 @@ export default defineConfig(({ mode }) => ({
     include: [
       'react',
       'react-dom',
-      '@supabase/supabase-js',
       'react-router-dom',
       'lucide-react',
       '@tanstack/react-query',

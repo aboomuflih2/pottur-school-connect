@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { djangoAPI } from '@/lib/django-api';
 
 interface SocialLink {
   id: string;
@@ -33,14 +33,8 @@ const Footer = () => {
 
   const fetchSocialLinks = async () => {
     try {
-      const { data, error } = await supabase
-        .from('social_media_links')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (error) throw error;
-      setSocialLinks(data || []);
+      const rows = await djangoAPI.getSocialMediaLinks();
+      setSocialLinks((rows || []).filter((r: any) => r.is_active));
     } catch (error) {
       console.error('Error fetching social links:', error);
     } finally {

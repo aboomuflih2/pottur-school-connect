@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 const AboutLegacySection = () => {
   const [legacyContent, setLegacyContent] = useState<string>("");
@@ -11,17 +10,11 @@ const AboutLegacySection = () => {
 
   const loadLegacyContent = async () => {
     try {
-      const { data, error } = await supabase
-        .from('page_content')
-        .select('content')
-        .eq('page_key', 'about_legacy')
-        .single();
-
-      if (error) throw error;
-      
-      if (data) {
-        setLegacyContent(data.content);
-      }
+      // Use static content for now - can be replaced with Django API call later
+      setLegacyContent(`Modern Higher Secondary School, Pottur, stands as a beacon of quality education in Malappuram district. 
+        Established under the Crescent Educational Trust, our institution has been nurturing young minds and shaping future leaders 
+        for over two decades. Our journey began with a vision to provide comprehensive education that blends academic excellence 
+        with moral values, preparing our students for the challenges of tomorrow.`);
     } catch (error) {
       console.error('Error loading legacy content:', error);
       // Fallback content
@@ -57,7 +50,7 @@ const AboutLegacySection = () => {
             Our Legacy
           </h2>
           <div className="prose prose-lg mx-auto text-foreground/80 leading-relaxed">
-            {legacyContent.split('\n\n').map((paragraph, index) => (
+            {legacyContent && legacyContent.split('\n\n').map((paragraph, index) => (
               <p key={index} className="mb-6">
                 {paragraph.trim()}
               </p>

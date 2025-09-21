@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8001/api';
+const API_BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 interface LoginResponse {
   access: string;
@@ -40,8 +40,16 @@ class AuthService {
       localStorage.setItem('refresh_token', refresh);
       
       return response.data;
-    } catch (error) {
-      throw new Error('Login failed');
+    } catch (error: any) {
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      } else if (error.response?.data?.email) {
+        throw new Error('Please enter a valid email address');
+      } else if (error.response?.data?.password) {
+        throw new Error('Password is required');
+      } else {
+        throw new Error('Login failed. Please check your credentials.');
+      }
     }
   }
 

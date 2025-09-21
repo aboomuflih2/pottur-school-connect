@@ -56,6 +56,12 @@ class ContactSubmissionViewSet(viewsets.ModelViewSet):
     serializer_class = ContactSubmissionSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        # Allow anyone to create a contact submission; protect listing/modifying
+        if self.action in ['create']:
+            return [AllowAny()]
+        return super().get_permissions()
+
 class SocialMediaLinkViewSet(viewsets.ModelViewSet):
     queryset = SocialMediaLink.objects.filter(is_active=True).order_by('order_index')
     serializer_class = SocialMediaLinkSerializer

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Target, Eye } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ContentData {
   mission: string;
@@ -18,25 +17,11 @@ const AboutMissionVision = () => {
 
   const loadContent = async () => {
     try {
-      const { data, error } = await supabase
-        .from('page_content')
-        .select('page_key, content')
-        .in('page_key', ['about_mission', 'about_vision']);
-
-      if (error) throw error;
-
-      if (data) {
-        const contentMap = data.reduce((acc, item) => {
-          if (item.page_key === 'about_mission') {
-            acc.mission = item.content;
-          } else if (item.page_key === 'about_vision') {
-            acc.vision = item.content;
-          }
-          return acc;
-        }, { mission: "", vision: "" });
-
-        setContent(contentMap);
-      }
+      // Use static content for now - can be replaced with Django API call later
+      setContent({
+        mission: `To provide quality education that empowers students with knowledge, skills, and values necessary for their personal growth and success in life. We are committed to fostering a learning environment that encourages critical thinking, creativity, and character development while maintaining the highest standards of academic excellence.`,
+        vision: `To be recognized as a leading educational institution that produces confident, competent, and compassionate individuals who contribute positively to society. We envision a future where our students become lifelong learners and responsible citizens who make meaningful contributions to their communities and the world at large.`
+      });
     } catch (error) {
       console.error('Error loading mission/vision content:', error);
       // Fallback content

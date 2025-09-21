@@ -59,31 +59,26 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
-- Self-hosted Supabase (VPS: 63.250.52.6)
+- Django REST API backend (DRF + JWT)
 
 ## How can I deploy this project?
 
 ### Option 1: Lovable Platform
 Simply open [Lovable](https://lovable.dev/projects/7b894dc2-942f-478f-911d-a73afe323a9d) and click on Share -> Publish.
 
-### Option 2: Self-Hosted VPS Deployment
-This project is configured to work with a self-hosted Supabase instance on VPS IP: **63.250.52.6**
+### Option 2: Local Dev (Django + Vite)
 
-**Quick Setup:**
-1. Copy `.env.vps` to `.env` and update with your actual API keys
-2. Get Supabase keys from: http://63.250.52.6:3000
-3. Test connection: `node test-self-hosted-connection.js`
-4. Deploy using Docker: `docker-compose -f docker-compose.vps.yml up -d`
+Backend (Django):
+- cd backend
+- Create env: python -m venv venv && source venv/bin/activate
+- Install deps: pip install -r requirements.txt (or pip install django djangorestframework djangorestframework-simplejwt django-cors-headers psycopg2-binary)
+- Migrate: python manage.py migrate
+- Run: python manage.py runserver 0.0.0.0:8001
 
-**Configuration Files:**
-- `.env.vps` - VPS environment template
-- `docker-compose.vps.yml` - VPS Docker configuration
-- `VPS_SUPABASE_SETUP_GUIDE.md` - Complete setup guide
-- `VPS_DEPLOYMENT_GUIDE.md` - Deployment instructions
-
-**Supabase URLs:**
-- API: http://63.250.52.6:8000
-- Studio: http://63.250.52.6:3000
+Frontend (Vite):
+- In project root, create .env with: `VITE_API_BASE_URL=http://localhost:8001/api`
+- npm i
+- npm run dev
 
 ## Can I connect a custom domain to my Lovable project?
 

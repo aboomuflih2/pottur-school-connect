@@ -12,7 +12,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Send } from "lucide-react";
 
 const formSchema = z.object({
@@ -94,73 +93,29 @@ export function KGStdApplicationForm() {
       let lastError: Error | null = null;
       while (tries < 3) {
         const applicationNumber = generateApplicationNumber();
-        const { error } = await supabase
-          .from('kg_std_applications')
-          .insert([{
-            application_number: applicationNumber,
-            full_name: data.fullName,
-            gender: data.gender,
-            date_of_birth: data.dateOfBirth,
-            father_name: data.fatherName,
-            mother_name: data.motherName,
-            house_name: data.houseName,
-            post_office: data.postOffice,
-            village: data.village,
-            pincode: data.pincode,
-            district: data.district,
-            mobile_number: data.mobileNumber,
-            stage: data.stage || null,
-            need_madrassa: data.needMadrassa || false,
-            previous_madrassa: data.previousMadrassa || null,
-            has_siblings: data.hasSiblings || false,
-            siblings_names: data.siblingsNames || null,
-            email: data.email || null,
-            previous_school: data.previousSchool || null,
-          }]);
-        if (!error) {
-          navigate(`/admissions/success?type=kg-std&app=${encodeURIComponent(applicationNumber)}&mobile=${encodeURIComponent(data.mobileNumber)}`);
-          return;
-        }
-        lastError = error;
-        const msg = error?.message || '';
-        // Legacy schema fallback: retry insert with older columns if stage/madrassa fields missing
-        if (msg.toLowerCase().includes('column') && msg.toLowerCase().includes('does not exist')) {
-          const { error: legacyError } = await supabase
-            .from('kg_std_applications')
-            .insert([{
-              application_number: applicationNumber,
-              full_name: data.fullName,
-              gender: data.gender,
-              date_of_birth: data.dateOfBirth,
-              father_name: data.fatherName,
-              mother_name: data.motherName,
-              guardian_name: null,
-              house_name: data.houseName,
-              post_office: data.postOffice,
-              village: data.village,
-              pincode: data.pincode,
-              district: data.district,
-              email: data.email || null,
-              mobile_number: data.mobileNumber,
-              previous_school: data.previousSchool || null,
-            }]);
-          if (!legacyError) {
-            navigate(`/admissions/success?type=kg-std&app=${encodeURIComponent(applicationNumber)}&mobile=${encodeURIComponent(data.mobileNumber)}`);
-            return;
-          }
-          lastError = legacyError;
-        }
-        // If duplicate application_number, retry
-        const dup = error?.message || "";
-        if (!(dup.includes('duplicate') || dup.includes('unique') || dup.includes('23505'))) break;
-        tries++;
+        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api';
+        const payload = {
+          student_name: data.fullName,
+          date_of_birth: data.dateOfBirth,
+          gender: data.gender === 'boy' ? 'male' : 'female',
+          parent_name: `${data.fatherName} & ${data.motherName}`,
+          parent_email: data.email || undefined,
+          parent_phone: data.mobileNumber,
+          address: `${data.houseName}, ${data.postOffice}, ${data.village}, ${data.district} - ${data.pincode}`,
+          previous_school: data.previousSchool || undefined,
+          grade_applying_for: data.stage || 'KG',
+          notes: data.siblingsNames || undefined,
+        };
+        const resp = await fetch(`${base}/admissions/kg-std-applications/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        navigate(`/admissions/success?type=kg-std&app=${encodeURIComponent(applicationNumber)}&mobile=${encodeURIComponent(data.mobileNumber)}`);
+        break;
       }
-      const message = lastError?.message || 'Failed to submit application.';
-      toast({
-        title: "Submission Failed",
-        description: message,
-        variant: "destructive"
-      });
+      throw new Error('Failed to submit application.');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to submit application. Please try again.";
       toast({

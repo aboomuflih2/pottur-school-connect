@@ -2,14 +2,15 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { djangoAPI } from "@/lib/django-api";
 
 interface Testimonial {
   id: string;
-  quote: string;
+  content: string;
   rating: number;
-  person_name: string;
-  relation: string;
+  name: string;
+  designation?: string | null;
+  photo_url?: string | null;
 }
 
 const Testimonials = () => {
@@ -17,25 +18,21 @@ const Testimonials = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load testimonials from database
+  // Load testimonials from Django API
   useEffect(() => {
     const loadTestimonials = async () => {
       try {
         setIsLoading(true);
-        const { data, error } = await supabase
-          .from('testimonials')
-          .select('*')
-          .eq('is_active', true)
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false })
-          .limit(3);
-
-        if (error) {
-          console.error('Error loading testimonials:', error);
-          return;
-        }
-
-        setTestimonials(data || []);
+        const rows = await djangoAPI.getTestimonials();
+        const mapped: Testimonial[] = (rows || []).slice(0, 3).map((r: any) => ({
+          id: r.id,
+          content: r.content,
+          rating: r.rating ?? 5,
+          name: r.name,
+          designation: r.designation,
+          photo_url: r.photo_url,
+        }));
+        setTestimonials(mapped);
       } catch (error) {
         console.error('Error loading testimonials:', error);
       } finally {
@@ -158,13 +155,13 @@ const Testimonials = () => {
                   {/* Stars */}
                   <div className="flex justify-center mb-6">
                     <div className="flex gap-1">
-                      {renderStars(testimonial.rating)}
+                      {renderStars(testimonial.rating ?? 5)}
                     </div>
                   </div>
 
                   {/* Quote */}
                   <blockquote className="text-lg lg:text-xl leading-relaxed text-center text-foreground mb-8 italic">
-                    "{testimonial.quote}"
+                    "{testimonial.content}"
                   </blockquote>
 
                   {/* Person Info */}
@@ -172,17 +169,17 @@ const Testimonials = () => {
                     {/* Avatar Placeholder */}
                     <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
                       <span className="text-primary font-semibold text-lg">
-                        {testimonial.person_name.charAt(0)}
+                        {testimonial.name.charAt(0)}
                       </span>
                     </div>
 
                     {/* Name and Relation */}
                     <div className="text-center">
                       <h4 className="font-semibold text-primary text-lg">
-                        {testimonial.person_name}
+                        {testimonial.name}
                       </h4>
                       <p className="text-muted-foreground text-sm">
-                        {testimonial.relation}
+                        {testimonial.designation || 'Community Member'}
                       </p>
                     </div>
                   </div>
@@ -229,23 +226,23 @@ const Testimonials = () => {
           {testimonials.slice(0, 3).map((testimonial, index) => (
             <Card key={testimonial.id} className="p-6 bg-card hover:shadow-card transition-smooth">
               <div className="flex gap-1 mb-3">
-                {renderStars(testimonial.rating)}
+                {renderStars(testimonial.rating ?? 5)}
               </div>
               <p className="text-sm text-foreground mb-4 line-clamp-3">
-                "{testimonial.quote}"
+                "{testimonial.content}"
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                   <span className="text-primary font-semibold text-xs">
-                    {testimonial.person_name.charAt(0)}
+                    {testimonial.name.charAt(0)}
                   </span>
                 </div>
                 <div>
                   <p className="font-medium text-sm text-primary">
-                    {testimonial.person_name}
+                    {testimonial.name}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {testimonial.relation}
+                    {testimonial.designation || 'Community Member'}
                   </p>
                 </div>
               </div>

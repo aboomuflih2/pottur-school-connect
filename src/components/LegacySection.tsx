@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { icons, type LucideIcon } from "lucide-react";
+import { djangoAPI } from "@/lib/django-api";
 
 interface SchoolStat {
   id: string;
-  label: string;
-  value: number;
-  suffix: string;
-  icon_name: string;
-  display_order: number;
-  is_active: boolean;
+  stat_label: string;
+  stat_value: string;
+  stat_name: string;
+  icon?: string | null;
 }
 
 const LegacySection = () => {
@@ -24,22 +22,16 @@ const LegacySection = () => {
 
   const loadStats = async () => {
     try {
-      const { data, error } = await supabase
-        .from('school_stats')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (error) throw error;
+      const data = await djangoAPI.getSchoolStats();
       setStats(data || []);
     } catch (error) {
       console.error('Error loading stats:', error);
       // Fallback to default stats if database fails
       setStats([
-        { id: '1', label: 'Students Enrolled', value: 500, suffix: '+', icon_name: 'Users', display_order: 1, is_active: true },
-        { id: '2', label: 'Years of Excellence', value: 25, suffix: '+', icon_name: 'Award', display_order: 2, is_active: true },
-        { id: '3', label: 'Pass Rate', value: 100, suffix: '%', icon_name: 'BookOpen', display_order: 3, is_active: true },
-        { id: '4', label: 'Academic Awards', value: 50, suffix: '+', icon_name: 'Trophy', display_order: 4, is_active: true }
+        { id: '1', stat_label: 'Students Enrolled', stat_value: '500+', stat_name: 'Students', icon: 'Users' },
+        { id: '2', stat_label: 'Years of Excellence', stat_value: '25+', stat_name: 'Years', icon: 'Award' },
+        { id: '3', stat_label: 'Pass Rate', stat_value: '100%', stat_name: 'PassRate', icon: 'BookOpen' },
+        { id: '4', stat_label: 'Academic Awards', stat_value: '50+', stat_name: 'Awards', icon: 'Trophy' }
       ]);
     } finally {
       setLoading(false);
@@ -97,17 +89,18 @@ const LegacySection = () => {
               ))
             ) : (
               stats.map((stat) => {
-                const IconComponent = (icons as Record<string, LucideIcon>)[stat.icon_name] || icons.Trophy;
+                const iconKey = (stat as any).icon || 'Trophy';
+                const IconComponent = (icons as Record<string, LucideIcon>)[iconKey] || icons.Trophy;
                 return (
                   <Card key={stat.id} className="p-6 text-center shadow-card hover:shadow-elegant transition-smooth bg-card">
                     <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-4">
                       <IconComponent className="h-6 w-6 text-primary" />
                     </div>
                     <div className="text-3xl font-bold text-primary mb-2">
-                      {stat.value}{stat.suffix}
+                      {stat.stat_value}
                     </div>
                     <div className="text-sm font-medium text-muted-foreground">
-                      {stat.label}
+                      {stat.stat_label}
                     </div>
                   </Card>
                 );

@@ -1,4 +1,4 @@
--- Apply all Supabase migrations to PostgreSQL
+-- Apply all migrations to PostgreSQL (legacy consolidated format)
 -- This script consolidates all migration files for VPS deployment
 
 -- Start transaction

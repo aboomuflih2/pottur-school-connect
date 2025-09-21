@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { adminSupabase as supabase } from '@/integrations/supabase/admin-client';
+import { supabase } from '@/lib/supabase-admin';
 import { toast } from '@/hooks/use-toast';
 import { Radio, Save, Link, ExternalLink } from 'lucide-react';
 

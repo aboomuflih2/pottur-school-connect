@@ -55,8 +55,9 @@ export function useAuth() {
         loading: false,
       });
       return { data: { user }, error: null };
-    } catch (error) {
-      return { data: null, error: { message: 'Login failed' } };
+    } catch (error: any) {
+      const message = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      return { data: null, error: { message } };
     }
   };
 

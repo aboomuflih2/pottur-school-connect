@@ -5,7 +5,6 @@ import ContactForm from "@/components/ContactForm";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect, type ElementType } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AdmissionsModal } from "@/components/admissions/AdmissionsModal";
 
@@ -65,48 +64,11 @@ const Contact = () => {
 
   const loadContactContent = async () => {
     try {
-      // Load contact page content
-      const { data: contentData, error: contentError } = await supabase
-        .from('contact_page_content')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (contentError) {
-        console.error('Error loading contact content:', contentError);
-        toast.error('Failed to load contact information');
-        return;
-      }
-
-      setContactContent(contentData || []);
-
-      // Load contact addresses
-      const { data: addressData, error: addressError } = await supabase
-        .from('contact_addresses')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (addressError) {
-        console.error('Error loading contact addresses:', addressError);
-        // Don't show error toast for addresses as they might not exist yet
-      } else {
-        setContactAddresses(addressData || []);
-      }
-
-      // Load contact locations
-      const { data: locationData, error: locationError } = await supabase
-        .from('contact_locations')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (locationError) {
-        console.error('Error loading contact locations:', locationError);
-        // Don't show error toast for locations as they might not exist yet
-      } else {
-        setContactLocations(locationData || []);
-      }
+      // TODO: Replace with Django content endpoints when available
+      // For now, use static fallbacks and clear loading state
+      setContactContent([]);
+      setContactAddresses([]);
+      setContactLocations([]);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Failed to load contact information');

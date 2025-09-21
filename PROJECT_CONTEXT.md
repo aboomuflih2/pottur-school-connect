@@ -6,7 +6,7 @@ Pottur School Connect is a comprehensive school management system built with mod
 ## Tech Stack
 - **Frontend**: React 18 + TypeScript + Vite
 - **Styling**: Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **Backend**: Django (DRF + JWT + PostgreSQL)
 - **State Management**: Zustand
 - **Routing**: React Router DOM
 - **UI Components**: Custom components with Lucide React icons
@@ -29,7 +29,7 @@ Pottur School Connect is a comprehensive school management system built with mod
 - **Responsive Design**: Mobile-friendly interface
 - **Leadership Section**: Display board members with profile modals
 
-## Database Schema (Supabase)
+## Database Schema (Django)
 
 ### Key Tables
 - `job_applications`: Stores job application data with CV file references
@@ -38,27 +38,26 @@ Pottur School Connect is a comprehensive school management system built with mod
 - `contact_forms`: General contact submissions
 - `academic_programs`: School programs and courses
 - `admission_forms`: Student admission applications
-- `auth.users`: Supabase authentication (built-in)
+- `accounts_user`: Django custom user (email-based)
 - `board_members`: Leadership team members with profiles and positions
 - `social_links`: Social media links for board members
 
-### Storage Buckets
-- `cv-uploads`: Stores CV files for job applications
-- `member-photos`: Storage for board member profile photos
-- File upload policies configured for authenticated users
+### Media Storage
+- Django `MEDIA_ROOT` used for file uploads
+- File/Image fields on models (e.g., jobs documents, news images)
 
 ## Environment Configuration
 
 ### Development Setup
-- Local Supabase instance running via Docker
-- Development server on http://localhost:8080
-- Database accessible via Docker container
+- Django dev server on http://localhost:8001 (configurable)
+- Vite dev server on http://localhost:8080
+- PostgreSQL configured via env in `backend/.env`
 
 ### Required Environment Variables
-- Supabase connection details (URL, keys)
 - Database credentials
 - Storage configuration
 - Authentication settings
+ - API base URL for frontend (VITE_API_BASE_URL)
 
 ## Project Structure
 ```
@@ -113,16 +112,16 @@ src/
 │   ├── board-members.ts
 │   └── ...
 ├── utils/               # Utility functions
-│   ├── supabase.ts
+│   ├── django-api.ts
 │   ├── auth.ts
 │   └── ...
 └── styles/              # CSS and styling
     └── globals.css
 
-supabase/
-├── migrations/    # Database migration files
-├── functions/     # Edge functions
-└── config.toml    # Supabase configuration
+backend/
+├── pottur_backend/         # Django project
+├── accounts/ events/ news/ # Apps
+└── ...
 ```
 
 ## Feature Details
@@ -142,7 +141,7 @@ The Director Board feature provides comprehensive management of leadership team 
 
 **Key Features:**
 - Responsive grid layout for member display
-- Profile photo upload with Supabase storage
+- Profile photo upload via Django media (or URLs)
 - Dynamic social media links (LinkedIn, Twitter, Email, Website)
 - Admin dashboard integration
 - RLS policies for secure data access
@@ -158,9 +157,9 @@ The Director Board feature provides comprehensive management of leadership team 
 - Implement responsive design by default
 
 ### Database Operations
-- Use Supabase client for all database interactions
-- Implement proper RLS policies for security
-- Handle file uploads through Supabase Storage
+- Use Django REST API endpoints for all interactions
+- Use JWT auth; respect permissions per viewset
+- Handle file uploads via model File/Image fields
 - Use proper error handling and validation
 
 ### State Management
@@ -186,7 +185,7 @@ The Director Board feature provides comprehensive management of leadership team 
 - Check authentication status for upload permissions
 
 ## Key Files to Reference
-- `src/utils/supabase.ts`: Supabase client configuration
+- `src/lib/django-api.ts`: Django API client
 - `src/hooks/useAuth.ts`: Authentication hook
 - `src/hooks/useBoardMembers.ts`: Board members management hook
 - `src/components/admin/AdminLayout.tsx`: Admin dashboard layout
@@ -198,8 +197,7 @@ The Director Board feature provides comprehensive management of leadership team 
 - `src/pages/admin/about/Leadership.tsx`: Leadership management page
 - `src/types/board-members.ts`: Board member type definitions
 - `src/hooks/useJobApplications.ts`: Job application data management
-- `supabase/migrations/`: Database schema definitions
-- `supabase/migrations/043_create_board_members_tables.sql`: Board members schema
+ 
 - `.env`: Environment configuration
 - `src/pages/Careers.tsx`: Job application form
 - Admin dashboard components for data display

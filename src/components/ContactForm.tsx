@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { djangoAPI } from "@/lib/django-api";
 import { Send, Phone, Mail, MapPin, Clock } from "lucide-react";
 
 const ContactForm = () => {
@@ -33,17 +33,13 @@ const ContactForm = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
-        .from('contact_submissions')
-        .insert([{
-          full_name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
-          subject: formData.subject,
-          message: formData.message
-        }]);
-
-      if (error) throw error;
+      await djangoAPI.createContactSubmission({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        subject: formData.subject,
+        message: formData.message,
+      });
 
       toast({
         title: "Message Sent Successfully!",

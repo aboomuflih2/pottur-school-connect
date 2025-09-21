@@ -3,10 +3,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { BookOpen, Users, Award, Target, Lightbulb, GraduationCap } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
+import { djangoAPI } from "@/lib/django-api";
 
-type AcademicProgram = Database["public"]["Tables"]["academic_programs"]["Row"];
+interface AcademicProgram {
+  id: string;
+  name: string;
+  description?: string;
+  program_type?: string;
+  duration_years?: number;
+  duration_months?: number;
+  main_image?: string | null;
+}
 
 const AcademicPrograms = () => {
   const [selectedProgram, setSelectedProgram] = useState<AcademicProgram | null>(null);
@@ -15,27 +22,29 @@ const AcademicPrograms = () => {
 
   // Icon mapping for each program type
   const getIcon = (title: string) => {
-    if (title.includes("Pre-School")) return BookOpen;
-    if (title.includes("Primary")) return Users;
-    if (title.includes("Upper Primary")) return Target;
-    if (title.includes("Moral Studies")) return Lightbulb;
-    if (title.includes("High School")) return Award;
-    if (title.includes("Higher Secondary")) return GraduationCap;
+    if (title?.includes("Pre-School")) return BookOpen;
+    if (title?.includes("Primary")) return Users;
+    if (title?.includes("Upper Primary")) return Target;
+    if (title?.includes("Moral Studies")) return Lightbulb;
+    if (title?.includes("High School")) return Award;
+    if (title?.includes("Higher Secondary")) return GraduationCap;
     return BookOpen;
   };
 
   useEffect(() => {
     const fetchPrograms = async (retryCount = 0) => {
       try {
-        const { data, error } = await supabase
-          .from("academic_programs")
-          .select("*")
-          .eq("is_active", true)
-          .order("display_order");
-
-        if (error) throw error;
-        
-        setPrograms(data || []);
+        const rows = await djangoAPI.getAcademicPrograms();
+        const mapped: AcademicProgram[] = (rows || []).map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          description: r.description,
+          program_type: r.program_type,
+          duration_years: r.duration_years,
+          duration_months: r.duration_months,
+          main_image: r.image_url || null,
+        }));
+        setPrograms(mapped);
       } catch (error) {
         console.error("Error fetching academic programs:", error);
         
@@ -52,7 +61,7 @@ const AcademicPrograms = () => {
 
     // Add delay to stagger requests and prevent network congestion
     const timer = setTimeout(() => {
-      fetchPrograms();
+          fetchPrograms();
     }, 400);
     
     return () => clearTimeout(timer);
@@ -90,7 +99,7 @@ const AcademicPrograms = () => {
         {/* Programs Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {programs.slice(0, 3).map((program) => {
-            const IconComponent = getIcon(program.program_title);
+            const IconComponent = getIcon(program.name);
             return (
               <div
                 key={program.id}
@@ -102,7 +111,7 @@ const AcademicPrograms = () => {
                   {program.main_image ? (
                     <img
                       src={program.main_image}
-                      alt={program.program_title}
+                      alt={program.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).style.display = 'none';
@@ -119,10 +128,10 @@ const AcademicPrograms = () => {
                 {/* Card Content */}
                 <div className="p-6">
                   <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
-                    {program.program_title}
+                    {program.name}
                   </h3>
                   <p className="text-muted-foreground mb-4 line-clamp-3">
-                    {program.short_description}
+                    {program.description}
                   </p>
                   <Button 
                     variant="outline" 
@@ -152,9 +161,7 @@ const AcademicPrograms = () => {
         <Dialog open={!!selectedProgram} onOpenChange={() => setSelectedProgram(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">
-                {selectedProgram?.program_title}
-              </DialogTitle>
+              <DialogTitle className="text-2xl font-bold">{selectedProgram?.name}</DialogTitle>
             </DialogHeader>
             <div className="space-y-6">
               {/* Program Image */}
@@ -162,7 +169,7 @@ const AcademicPrograms = () => {
                 <div className="relative h-64 rounded-lg overflow-hidden">
                   <img
                     src={selectedProgram.main_image}
-                    alt={selectedProgram.program_title}
+                    alt={selectedProgram.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = 'none';
@@ -176,39 +183,28 @@ const AcademicPrograms = () => {
                 <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg">
                   {selectedProgram && (
                     (() => {
-                      const IconComponent = getIcon(selectedProgram.program_title);
+                      const IconComponent = getIcon(selectedProgram.name);
                       return <IconComponent className="w-6 h-6 text-primary" />;
                     })()
                   )}
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Duration</p>
-                  <p className="font-semibold">{selectedProgram?.duration}</p>
+                  <p className="font-semibold">
+                    {selectedProgram?.duration_years}
+                    {selectedProgram?.duration_years ? ' years' : ''}
+                    {selectedProgram?.duration_months ? ` ${selectedProgram.duration_months} months` : ''}
+                  </p>
                 </div>
               </div>
               
               <div>
                 <h4 className="font-semibold mb-2">Program Overview</h4>
                 <p className="text-muted-foreground leading-relaxed">
-                  {selectedProgram?.short_description}
+                  {selectedProgram?.description}
                 </p>
               </div>
 
-              {selectedProgram?.subjects && selectedProgram.subjects.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Core Subjects</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedProgram.subjects.map((subject, index) => (
-                      <div
-                        key={index}
-                        className="bg-muted px-3 py-2 rounded-lg text-sm"
-                      >
-                        {subject}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="flex justify-end space-x-2 pt-4 border-t">
                 <Button variant="outline" onClick={() => setSelectedProgram(null)}>

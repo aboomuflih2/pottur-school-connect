@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { GraduationCap, Search, FileText, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AdmissionsModalProps {
   isOpen: boolean;
@@ -28,38 +27,13 @@ export function AdmissionsModal({ isOpen, onClose }: AdmissionsModalProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchFormStatuses = async () => {
-      if (!isOpen) return;
-      
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('admission_forms')
-          .select('form_type, is_active, academic_year');
-
-        if (error) throw error;
-
-        const kgStdForm = data?.find(form => form.form_type === 'kg_std');
-        const plusOneForm = data?.find(form => form.form_type === 'plus_one');
-
-        setFormStatuses({
-          kgStd: kgStdForm ? { 
-            isActive: kgStdForm.is_active, 
-            academicYear: kgStdForm.academic_year 
-          } : null,
-          plusOne: plusOneForm ? { 
-            isActive: plusOneForm.is_active, 
-            academicYear: plusOneForm.academic_year 
-          } : null,
-        });
-      } catch (error) {
-        console.error('Error fetching form statuses:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFormStatuses();
+    // For Django backend, assume forms are open unless controlled via separate config
+    if (!isOpen) return;
+    setLoading(false);
+    setFormStatuses({
+      kgStd: { isActive: true, academicYear: new Date().getFullYear().toString() },
+      plusOne: { isActive: true, academicYear: new Date().getFullYear().toString() },
+    });
   }, [isOpen]);
 
   const handleApplyClick = (formType: "kg-std" | "plus-one") => {

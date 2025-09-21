@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import heroImage from "@/assets/hero-school-building.jpg";
 import studentsImage from "@/assets/students-studying.jpg";
+import { djangoAPI } from "@/lib/django-api";
 
 interface HeroSlide {
   id: string;
@@ -33,13 +34,7 @@ const HeroSection = () => {
 
   const loadSlides = async (retryCount = 0) => {
     try {
-      const response = await fetch('http://localhost:8001/api/content/hero-slides/');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const data = await djangoAPI.getHeroSlides();
       setSlides(data || []);
     } catch (error) {
       console.error('Error loading slides:', error);

@@ -2,15 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { Client } from 'pg';
 
-// Basic connection config for local Supabase Postgres
-// Defaults match `supabase start` local stack
+// Basic connection config for local Postgres
 const DB_HOST = process.env.PGHOST || '127.0.0.1';
 const DB_PORT = parseInt(process.env.PGPORT || '54322', 10);
 const DB_USER = process.env.PGUSER || 'postgres';
 const DB_PASSWORD = process.env.PGPASSWORD || 'postgres';
 const DB_DATABASE = process.env.PGDATABASE || 'postgres';
 
-const MIGRATIONS_DIR = path.resolve('supabase', 'migrations');
+const MIGRATIONS_DIR = path.resolve('supabase', 'migrations'); // legacy migrations folder if present
 
 async function run() {
   const client = new Client({
@@ -66,4 +65,3 @@ async function run() {
 }
 
 run();
-
